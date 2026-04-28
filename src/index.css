@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* WMS 系统需要的自定义滚动条样式 */
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 20px;
+  }
+}
+
+@theme {
+  /* 强制把默认的 200 色号替换成更浅的 100 色号 */
+  --color-slate-200: var(--color-slate-100);
+  /* 把 100 色号替换成极浅的 50 色号 */
+  --color-slate-100: var(--color-slate-50);
+}
