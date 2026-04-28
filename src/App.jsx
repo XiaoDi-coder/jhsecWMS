@@ -17,8 +17,9 @@ import { ReceivablesPage } from './pages/ReceivablesPage';
 import { PayablesPage } from './pages/PayablesPage';
 import { ProductsPage, CustomersPage, SuppliersPage } from './pages/BasicDataPages';
 import { DictionaryManagePage } from './pages/DictionaryManagePage';
-import { RolesManagePage, UsersManagePage } from './pages/SystemManagePages';
-import { ReportInOutPage, ReportSalesPage } from './pages/ReportPages';
+import { RolesManagePage, UsersManagePage, AuditLogsPage } from './pages/SystemManagePages';
+import { ReportInOutPage, ReportSalesPage, ReportInventoryPage } from './pages/ReportPages';
+import myLogo from './assets/logo.png';
 
 const MainLayout = () => {
   const { 
@@ -49,6 +50,8 @@ const MainLayout = () => {
       'products': <ProductsPage />, 'customers': <CustomersPage />, 'suppliers': <SuppliersPage />,
       'dictionary': <DictionaryManagePage />, 'roles': <RolesManagePage />, 'users': <UsersManagePage />,
       'report-inout': <ReportInOutPage />, 'report-sales': <ReportSalesPage />,
+      'report-inventory': <ReportInventoryPage />, // 补全库存报表
+      'audit-logs': <AuditLogsPage />,             // 补全操作日志
       'order-detail': <OrderDetailPage />
     };
     return routes[activeTab] || <EmptyState />;
@@ -65,7 +68,7 @@ const MainLayout = () => {
 
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="h-16 flex items-center px-6 bg-slate-950 font-bold text-white text-lg tracking-wider border-b border-slate-800"><Package className="mr-3 text-blue-500" size={24} /> JHSEC WMS</div>
+        <div className="h-16 flex items-center px-6 bg-slate-950 font-bold text-white text-lg tracking-wider border-b border-slate-800"><img src={myLogo} alt="Logo" className="w-8 h-8 mr-3 object-contain" /> 金华保安 WMS</div>
         <div className="flex-1 overflow-y-auto py-4 custom-scrollbar">
           {menuConfig.map(menu => {
             if (!hasPerm(menu.id)) return null;

@@ -3,6 +3,8 @@ import { Search, Plus, Edit, Trash2, Lock } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { PageHeader, Badge, Pagination, EmptyState } from '../components/common';
 import { menuConfig } from '../data/mock';
+import { Download } from 'lucide-react';
+import { exportToCSV } from '../utils';
 
 export const RolesManagePage = () => {
   const { roles, setRoles, users, showConfirm, showMessage, addLog } = useContext(AppContext);
@@ -227,6 +229,41 @@ export const UsersManagePage = () => {
                  {item.id === currentUser.id && <button onClick={()=>handleResetPwd(item)} className="text-emerald-600 text-sm font-medium flex gap-1 items-center"><Lock size={14}/>改密</button>}
                  <button onClick={()=>handleDelete(item)} className="text-rose-500 text-sm font-medium flex gap-1 items-center"><Trash2 size={14}/>注销</button>
                </div>
+            </div>
+          )) : <EmptyState />}
+        </div>
+        <Pagination current={safePage} total={filtered.length} totalPages={Math.ceil(filtered.length / 10) || 1} onChange={setPage} />
+      </div>
+    </div>
+  );
+};
+
+export const AuditLogsPage = () => {
+  const { auditLogs } = useContext(AppContext);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+
+  const filtered = useMemo(() => auditLogs.filter(i => i.module.includes(search) || i.action.includes(search) || i.user.includes(search) || i.details.includes(search)), [auditLogs, search]);
+  const safePage = Math.max(1, Math.min(page, Math.ceil(filtered.length / 10) || 1));
+  const paginated = filtered.slice((safePage - 1) * 10, safePage * 10);
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 min-h-full flex flex-col border border-slate-100">
+      <PageHeader title="系统操作日志" action={<button onClick={()=>exportToCSV('操作日志',[{label:'发生时间',key:'timestamp'},{label:'操作人',key:'user'},{label:'所属模块',key:'module'},{label:'动作指令',key:'action'},{label:'详细信息',key:'details'}],filtered)} className="text-blue-600 border border-blue-600 px-4 py-2 rounded-xl text-sm flex gap-1.5"><Download size={16}/>导出审计表</button>} />
+      <div className="flex mb-6"><div className="relative flex-1 sm:max-w-md"><input type="text" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="全局检索模块/操作人/动作/详情..." className="w-full border rounded-xl px-4 py-2.5 pl-10 text-sm bg-slate-50 focus:bg-white"/><Search className="absolute left-3.5 top-3 text-slate-400" size={18}/></div></div>
+      <div className="rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+        <div className="hidden md:block overflow-x-auto"><table className="w-full text-sm text-left whitespace-nowrap"><thead className="bg-slate-50 text-slate-600 border-b border-slate-200"><tr><th className="p-4 w-48">发生时间</th><th className="p-4 w-32">操作人</th><th className="p-4 w-32">所属模块</th><th className="p-4 w-32">动作指令</th><th className="p-4">操作详情</th></tr></thead><tbody>
+          {paginated.map(i => (
+            <tr key={i.id} className="border-b group hover:bg-slate-50 text-slate-600"><td className="p-4 font-mono text-xs">{i.timestamp}</td><td className="p-4 font-medium text-slate-800">{i.user}</td><td className="p-4"><Badge text={i.module}/></td><td className="p-4 font-bold text-blue-600">{i.action}</td><td className="p-4 truncate max-w-lg">{i.details}</td></tr>
+          ))}
+          {paginated.length === 0 && <tr><td colSpan="5"><EmptyState/></td></tr>}
+        </tbody></table></div>
+        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50/50">
+          {paginated.length > 0 ? paginated.map(i => (
+            <div key={i.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-2">
+               <div className="flex justify-between items-center"><span className="font-medium text-slate-800">{i.user}</span> <span className="text-xs text-slate-400">{i.timestamp}</span></div>
+               <div className="text-sm"><Badge text={i.module}/><span className="ml-2 font-bold text-blue-600">{i.action}</span></div>
+               <div className="text-sm text-slate-500 mt-1 border-t border-slate-50 pt-2">{i.details}</div>
             </div>
           )) : <EmptyState />}
         </div>

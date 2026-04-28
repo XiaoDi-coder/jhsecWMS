@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { Package, ArrowLeft } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { PageHeader, Badge } from '../components/common';
+import myLogo from '../assets/logo.png';
 
 export const LoginPage = () => {
   const { users, setIsAuthenticated, setCurrentUser, addLog } = useContext(AppContext);
@@ -26,9 +27,9 @@ export const LoginPage = () => {
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-100">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-blue-500/30"><Package size={32} /></div>
-          <h1 className="text-2xl font-bold text-slate-800">JHSEC WMS</h1>
-          <p className="text-slate-500 mt-1 text-sm">企业级仓储与销售管理系统</p>
+          <img src={myLogo} alt="Logo" className="w-20 h-20 object-contain mb-4" />
+          <h1 className="text-2xl font-bold text-slate-800">金华保安 WMS</h1>
+          <p className="text-slate-500 mt-1 text-sm">仓销管理系统</p>
         </div>
         {error && <div className="bg-rose-50 text-rose-500 p-3 rounded-xl text-sm mb-6 text-center font-medium border border-rose-100">{error}</div>}
         <form onSubmit={handleLogin} className="space-y-5">
