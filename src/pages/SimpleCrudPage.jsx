@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useContext } from 'react';
 import { Search, Plus, Edit, Trash2, Upload, Download, Database } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
-import { PageHeader, Badge, Pagination, EmptyState } from '../components/common';
+import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
 import { exportToCSV } from '../utils';
 
 export const SimpleCrudPage = ({ title, data, setData, fields, displayColumns, defaultValues = {} }) => {
@@ -73,7 +73,13 @@ export const SimpleCrudPage = ({ title, data, setData, fields, displayColumns, d
           <button onClick={handleAdd} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-md flex items-center gap-1.5 hover:bg-blue-700"><Plus size={16}/>新建</button>
         </div>
       }/>
-      <div className="flex mb-6"><div className="relative w-full max-w-sm"><input type="text" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="全局数据检索..." className="w-full border border-slate-200 rounded-xl px-4 py-2.5 pl-10 focus:ring-4 outline-none bg-slate-50" /><Search className="absolute left-3.5 top-3 text-slate-400" size={18}/></div></div>
+      <div className="flex mb-6">
+        <SearchBar 
+          value={search} 
+          onChange={e => {setSearch(e.target.value); setPage(1);}} 
+          placeholder="全局数据检索..." 
+          className="w-full max-w-sm" 
+        /></div>
       
       <div className="rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
         {/* PC Table */}

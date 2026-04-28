@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useContext } from 'react';
 import { Search, Plus, Eye, Check, Trash2 } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
-import { PageHeader, Badge, Pagination, EmptyState } from '../components/common';
+import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
 import { getLocalDate } from '../utils';
 
 export const StockOutPage = () => {
@@ -37,7 +37,7 @@ export const StockOutPage = () => {
       <PageHeader title="出库管理" action={<button onClick={()=>setActiveTab('stock-out-create')} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 shadow-md flex items-center gap-1.5"><Plus size={16}/>新建出库单</button>} />
       <div className="flex border-b border-slate-200 mb-6 overflow-x-auto">{['全部', '待发货', '已发货'].map(t => <button key={t} onClick={()=>{setTab(t);setPage(1);}} className={`px-5 py-3 border-b-2 font-medium text-sm whitespace-nowrap ${tab===t?'border-blue-600 text-blue-600':'border-transparent text-slate-500 hover:text-slate-800'}`}>{t}</button>)}</div>
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1 sm:max-w-xs"><input type="text" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="单号/备注" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 pl-10 text-sm outline-none bg-slate-50 focus:bg-white"/><Search className="absolute left-3.5 top-3 text-slate-400" size={18}/></div>
+        <SearchBar value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="单号/备注" className="flex-1 sm:max-w-xs" />
         <select value={warehouse} onChange={e=>{setWarehouse(e.target.value);setPage(1);}} className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-slate-50 sm:w-36"><option value="">全部仓库</option>{systemDict.warehouses.map(w=><option key={w} value={w}>{w}</option>)}</select>
       </div>
       <div className="rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">

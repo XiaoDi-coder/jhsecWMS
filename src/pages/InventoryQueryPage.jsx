@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useContext } from 'react';
 import { Search, RotateCw } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
-import { PageHeader, Badge, Pagination, EmptyState } from '../components/common';
+import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
 
 export const InventoryQueryPage = () => {
   const { inventory, products, systemDict } = useContext(AppContext);
@@ -37,10 +37,12 @@ export const InventoryQueryPage = () => {
         } 
       />
       <div className="flex flex-col md:flex-row gap-3 mb-6">
-        <div className="relative flex-1 md:max-w-xs">
-          <input type="text" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="商品编码/名称" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 pl-10 text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none bg-slate-50 focus:bg-white"/>
-          <Search className="absolute left-3.5 top-3 text-slate-400" size={18}/>
-        </div>
+        <SearchBar 
+          value={search} 
+          onChange={e => {setSearch(e.target.value); setPage(1);}} 
+          placeholder="商品编码/名称" 
+          className="flex-1 md:max-w-xs" 
+        />
         <select value={warehouse} onChange={e=>{setWarehouse(e.target.value);setPage(1);}} className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none bg-slate-50 md:w-40 focus:ring-4 focus:border-blue-500">
           <option value="">全部仓库</option>
           {systemDict.warehouses.map(w=><option key={w} value={w}>{w}</option>)}

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useContext } from 'react';
 import { Search, Plus, Eye, Edit, Check, Trash2 } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
-import { PageHeader, Badge, Pagination, EmptyState } from '../components/common';
+import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
 import { getLocalDate } from '../utils';
 
 export const SalesOrdersPage = () => {
@@ -44,7 +44,13 @@ export const SalesOrdersPage = () => {
   return (
     <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 min-h-full flex flex-col border border-slate-100">
       <PageHeader title="销售订单" action={<button onClick={() => {setEditingRecord(null); setActiveTab('sales-order-create');}} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-md flex gap-1.5"><Plus size={16} />新建订单</button>} />
-      <div className="flex gap-3 mb-6"><div className="relative flex-1 sm:max-w-md"><input type="text" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="单号/客户" className="w-full border rounded-xl px-4 py-2.5 pl-10 text-sm focus:ring-4 focus:border-blue-500 outline-none bg-slate-50 focus:bg-white" /><Search className="absolute left-3.5 top-3 text-slate-400" size={18} /></div></div>
+      <div className="flex gap-3 mb-6">
+        <SearchBar 
+          value={search} 
+          onChange={e => {setSearch(e.target.value); setPage(1);}} 
+          placeholder="单号/客户" 
+          className="flex-1 sm:max-w-md" 
+        /></div>
       <div className="rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
         {/* PC Table */}
         <div className="hidden md:block overflow-x-auto"><table className="w-full text-sm text-left whitespace-nowrap"><thead className="bg-slate-50 text-slate-600 border-b border-slate-200"><tr><th className="p-4">订单号</th><th className="p-4">日期</th><th className="p-4">客户</th><th className="p-4">金额</th><th className="p-4">状态</th><th className="p-4 sticky right-0 bg-slate-50 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)] w-1 whitespace-nowrap">操作</th></tr></thead><tbody>

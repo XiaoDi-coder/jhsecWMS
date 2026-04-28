@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useContext } from 'react';
 import { Search, Plus, Eye, Check, Trash2 } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
-import { PageHeader, Badge, Pagination, EmptyState } from '../components/common';
+import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
 import { getLocalDate } from '../utils';
 
 export const InventoryCheckPage = () => {
@@ -39,7 +39,7 @@ export const InventoryCheckPage = () => {
     <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 min-h-full flex flex-col border border-slate-100">
       <PageHeader title="库存盘点" action={<button onClick={()=>setActiveTab('inventory-check-create')} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 shadow-md flex items-center gap-1.5"><Plus size={16}/>新建盘点</button>} />
       <div className="flex flex-col md:flex-row gap-3 mb-6 flex-wrap">
-        <div className="relative flex-1 md:max-w-xs"><input type="text" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="搜索单号/仓库" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 pl-10 text-sm outline-none bg-slate-50 focus:bg-white"/><Search className="absolute left-3.5 top-3 text-slate-400" size={18}/></div>
+        <SearchBar value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="搜索单号/仓库" className="flex-1 md:max-w-xs" />
         <select value={status} onChange={e=>{setStatus(e.target.value);setPage(1);}} className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-slate-50 md:w-32"><option value="">状态</option><option value="盘点中">盘点中</option><option value="已完成">已完成</option></select>
         <select value={warehouse} onChange={e=>{setWarehouse(e.target.value);setPage(1);}} className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-slate-50 md:w-32"><option value="">全部仓库</option>{systemDict.warehouses.map(w=><option key={w} value={w}>{w}</option>)}</select>
       </div>

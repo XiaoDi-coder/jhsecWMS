@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useContext } from 'react';
 import { Search, Eye, Edit, CreditCard, Check } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
-import { PageHeader, Badge, Pagination, EmptyState } from '../components/common';
+import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
 import { getLocalDate } from '../utils';
 
 export const ReceivablesPage = () => {
@@ -35,7 +35,7 @@ export const ReceivablesPage = () => {
     <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 min-h-full flex flex-col border border-slate-100">
       <PageHeader title="应收管理" />
       <div className="flex border-b border-slate-200 mb-6 overflow-x-auto">{['全部', '未结清', '部分结清', '已结清'].map(t => <button key={t} onClick={()=>{setTab(t);setPage(1);}} className={`px-5 py-3 border-b-2 font-medium text-sm whitespace-nowrap ${tab===t?'border-blue-600 text-blue-600':'border-transparent text-slate-500'}`}>{t}</button>)}</div>
-      <div className="flex mb-6"><div className="relative flex-1 sm:max-w-md"><input type="text" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="单号/客户" className="w-full border rounded-xl px-4 py-2.5 pl-10 text-sm bg-slate-50 focus:bg-white"/><Search className="absolute left-3.5 top-3 text-slate-400" size={18}/></div></div>
+      <div className="flex mb-6"><SearchBar value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="单号/客户" className="flex-1 sm:max-w-md" /></div>
       <div className="rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
         <div className="hidden md:block overflow-x-auto"><table className="w-full text-sm text-left whitespace-nowrap"><thead className="bg-slate-50 text-slate-600 border-b border-slate-200"><tr><th className="p-4">订单号</th><th className="p-4">客户</th><th className="p-4">总额</th><th className="p-4">未收金额</th><th className="p-4">状态</th><th className="p-4 sticky right-0 bg-slate-50 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)] w-1 whitespace-nowrap">操作</th></tr></thead><tbody>
           {paginated.length>0 ? paginated.map((i, idx) => (

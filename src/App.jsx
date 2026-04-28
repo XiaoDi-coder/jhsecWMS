@@ -68,7 +68,13 @@ const MainLayout = () => {
 
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="h-16 flex items-center px-6 bg-slate-950 font-bold text-white text-lg tracking-wider border-b border-slate-800"><img src={myLogo} alt="Logo" className="w-8 h-8 mr-3 object-contain" /> 金华保安 WMS</div>
+        <div 
+          className="h-16 flex items-center px-6 bg-slate-950 font-bold text-white text-lg tracking-wider border-b border-slate-800 cursor-pointer hover:bg-slate-800 transition-colors"
+          onClick={() => {
+            setActiveTab('dashboard'); // 切换回工作台
+            setIsMobileMenuOpen(false); // 如果是在手机端，点击后顺便收起侧边栏
+          }}
+        ><img src={myLogo} alt="Logo" className="w-8 h-8 mr-3 object-contain" /> 金华保安 WMS</div>
         <div className="flex-1 overflow-y-auto py-4 custom-scrollbar">
           {menuConfig.map(menu => {
             if (!hasPerm(menu.id)) return null;

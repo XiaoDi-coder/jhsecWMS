@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useContext } from 'react';
 import { Search, Plus, Edit, Trash2 } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
-import { PageHeader, Pagination, EmptyState } from '../components/common';
+import { PageHeader, Pagination, EmptyState, SearchBar } from '../components/common';
 import { getLocalDate } from '../utils';
 
 export const DealerManagePage = () => {
@@ -16,7 +16,7 @@ export const DealerManagePage = () => {
   return (
     <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 min-h-full border border-slate-100 flex flex-col">
       <PageHeader title="经销管理" action={<button onClick={()=>{setEditingRecord(null); setActiveTab('dealer-manage-create');}} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium flex gap-1.5"><Plus size={16}/>记录登记</button>} />
-      <div className="flex mb-6"><div className="relative w-full max-w-xs"><input type="text" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="搜索记录" className="w-full border rounded-xl px-4 py-2.5 pl-10 text-sm bg-slate-50 focus:ring-4 focus:border-blue-500 outline-none" /><Search className="absolute left-3.5 top-3 text-slate-400" size={18}/></div></div>
+      <div className="flex mb-6"><SearchBar value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="搜索记录" className="w-full max-w-xs" /></div>
       <div className="rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
         {/* PC Table */}
         <div className="hidden md:block overflow-x-auto"><table className="w-full text-sm text-left whitespace-nowrap"><thead className="bg-slate-50 border-b"><tr><th className="p-4">经销商</th><th className="p-4">商品名称</th><th className="p-4">数量</th><th className="p-4 sticky right-0 bg-slate-50 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)] w-1 whitespace-nowrap">操作</th></tr></thead><tbody>

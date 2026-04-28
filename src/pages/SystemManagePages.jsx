@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useContext } from 'react';
 import { Search, Plus, Edit, Trash2, Lock } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
-import { PageHeader, Badge, Pagination, EmptyState } from '../components/common';
+import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
 import { menuConfig } from '../data/mock';
 import { Download } from 'lucide-react';
 import { exportToCSV } from '../utils';
@@ -75,7 +75,7 @@ export const RolesManagePage = () => {
   return (
     <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 min-h-full flex flex-col border border-slate-100 relative">
       <PageHeader title="系统角色引擎" action={<button onClick={() => handleOpenModal()} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-md flex gap-1.5"><Plus size={16} />配置新角色</button>} />
-      <div className="flex mb-6"><div className="relative flex-1 sm:max-w-md"><input type="text" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="搜索角色名称..." className="w-full border border-slate-200 rounded-xl px-4 py-2.5 pl-10 text-sm focus:ring-4 outline-none bg-slate-50 focus:bg-white" /><Search className="absolute left-3.5 top-3 text-slate-400" size={18} /></div></div>
+      <div className="flex mb-6"><SearchBar value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="搜索角色名称..." className="flex-1 sm:max-w-md" /></div>
       
       <div className="rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
         <div className="hidden md:block overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-slate-50 border-b"><tr><th className="p-4">角色名</th><th className="p-4">描述</th><th className="p-4">拥有权限</th><th className="p-4">状态</th><th className="p-4 sticky right-0 bg-slate-50 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)] w-1 whitespace-nowrap">操作</th></tr></thead><tbody>
@@ -207,7 +207,7 @@ export const UsersManagePage = () => {
   return (
     <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 min-h-full flex flex-col border border-slate-100 relative">
       <PageHeader title="系统用户通行证" action={<button onClick={handleAdd} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-md flex gap-1.5"><Plus size={16} />颁发新账号</button>} />
-      <div className="flex mb-6"><div className="relative flex-1 sm:max-w-md"><input type="text" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="搜索账号或姓名..." className="w-full border border-slate-200 rounded-xl px-4 py-2.5 pl-10 text-sm focus:ring-4 outline-none bg-slate-50 focus:bg-white" /><Search className="absolute left-3.5 top-3 text-slate-400" size={18} /></div></div>
+      <div className="flex mb-6"><SearchBar value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="搜索账号或姓名..." className="flex-1 sm:max-w-md" /></div>
       <div className="rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
         <div className="hidden md:block overflow-x-auto"><table className="w-full text-sm text-left whitespace-nowrap"><thead className="bg-slate-50 border-b border-slate-200"><tr><th className="p-4">登录账号</th><th className="p-4">员工姓名</th><th className="p-4">配置角色</th><th className="p-4">状态</th><th className="p-4 sticky right-0 bg-slate-50 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)] w-1">操作</th></tr></thead><tbody>
           {paginated.length > 0 ? paginated.map(item => (
@@ -250,7 +250,7 @@ export const AuditLogsPage = () => {
   return (
     <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 min-h-full flex flex-col border border-slate-100">
       <PageHeader title="系统操作日志" action={<button onClick={()=>exportToCSV('操作日志',[{label:'发生时间',key:'timestamp'},{label:'操作人',key:'user'},{label:'所属模块',key:'module'},{label:'动作指令',key:'action'},{label:'详细信息',key:'details'}],filtered)} className="text-blue-600 border border-blue-600 px-4 py-2 rounded-xl text-sm flex gap-1.5"><Download size={16}/>导出审计表</button>} />
-      <div className="flex mb-6"><div className="relative flex-1 sm:max-w-md"><input type="text" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="全局检索模块/操作人/动作/详情..." className="w-full border rounded-xl px-4 py-2.5 pl-10 text-sm bg-slate-50 focus:bg-white"/><Search className="absolute left-3.5 top-3 text-slate-400" size={18}/></div></div>
+      <div className="flex mb-6"><SearchBar value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="全局检索模块/操作人/动作/详情..." className="flex-1 sm:max-w-md" /></div>
       <div className="rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
         <div className="hidden md:block overflow-x-auto"><table className="w-full text-sm text-left whitespace-nowrap"><thead className="bg-slate-50 text-slate-600 border-b border-slate-200"><tr><th className="p-4 w-48">发生时间</th><th className="p-4 w-32">操作人</th><th className="p-4 w-32">所属模块</th><th className="p-4 w-32">动作指令</th><th className="p-4">操作详情</th></tr></thead><tbody>
           {paginated.map(i => (
