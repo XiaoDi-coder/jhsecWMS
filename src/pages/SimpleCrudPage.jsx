@@ -87,7 +87,7 @@ export const SimpleCrudPage = ({ title, data, setData, fields, displayColumns, d
           {paginated.length > 0 ? paginated.map((i, idx) => <tr key={i.id || idx} className="border-b group hover:bg-slate-50">{displayColumns.map(c=><td key={c.key} className="p-4">{c.key==='status'?<Badge text={i[c.key]}/>:i[c.key]}</td>)}<td className="p-4 sticky right-0 bg-white group-hover:bg-slate-50 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)] w-1 whitespace-nowrap"><div className="flex items-center gap-4"><button onClick={()=>handleEdit(i)} className="text-blue-600 flex gap-1"><Edit size={16}/>编辑</button><button onClick={()=>handleDelete(i)} className="text-rose-500 flex gap-1"><Trash2 size={16}/>删除</button></div></td></tr>) : <tr><td colSpan={displayColumns.length + 1}><EmptyState /></td></tr>}
         </tbody></table></div>
         {/* Mobile Card */}
-        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50/50">
+        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50">
            {paginated.length > 0 ? paginated.map(item => (
              <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-2">
                 {displayColumns.map((c, idx) => (

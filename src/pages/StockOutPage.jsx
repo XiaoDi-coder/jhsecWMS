@@ -55,7 +55,7 @@ export const StockOutPage = () => {
           )) : <tr><td colSpan="8"><EmptyState/></td></tr>}
         </tbody></table></div>
         {/* Mobile Card */}
-        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50/50">
+        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50">
           {paginated.length > 0 ? paginated.map(i => (
             <div key={i.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-2">
                <div className="flex justify-between items-center"><span className="font-bold text-blue-600">{i.orderNo}</span><Badge text={i.status}/></div>
@@ -111,7 +111,7 @@ export const StockOutCreatePage = () => {
   return (
     <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-8 min-h-full border border-slate-100">
       <PageHeader title="新建出库单" onBack={() => setActiveTab('stock-out')} />
-      <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100 mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="bg-slate-50 rounded-xl p-5 border border-slate-100 mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div><label className="block text-sm font-medium mb-2">日期</label><input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full border rounded-xl px-4 py-2 bg-white" /></div>
         <div><label className="block text-sm font-medium mb-2">类型</label><select value={type} onChange={e=>setType(e.target.value)} className="w-full border rounded-xl px-4 py-2 bg-white"><option>销售出库</option><option>退货出库</option></select></div>
         <div><label className="block text-sm font-medium mb-2">客户</label><select value={customer} onChange={e=>setCustomer(e.target.value)} className="w-full border rounded-xl px-4 py-2 bg-white">{customers.map(c => <option key={c.id}>{c.name}</option>)}</select></div>

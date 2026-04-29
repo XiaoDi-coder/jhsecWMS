@@ -67,7 +67,7 @@ export const SalesOrdersPage = () => {
           )) : <tr><td colSpan="6"><EmptyState /></td></tr>}
         </tbody></table></div>
         {/* Mobile Card */}
-        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50/50">
+        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50">
           {paginated.length > 0 ? paginated.map(item => (
             <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-2">
                <div className="flex justify-between items-center"><span className="font-bold text-blue-600">{item.orderNo}</span><Badge text={item.status}/></div>
@@ -131,7 +131,7 @@ export const SalesOrderCreatePage = () => {
   return (
     <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-8 min-h-full border border-slate-100">
       <PageHeader title={titleText} onBack={() => { setEditingRecord(null); setActiveTab('sales-orders'); }} />
-      <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100 mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="bg-slate-50 rounded-xl p-5 border border-slate-100 mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <div><label className="block text-sm font-medium mb-2">日期</label><input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full border rounded-xl px-4 py-2.5 bg-white" /></div>
         <div><label className="block text-sm font-medium mb-2">客户</label><select value={customer} onChange={e=>setCustomer(e.target.value)} className="w-full border rounded-xl px-4 py-2.5 bg-white"><option>客户 A</option><option>客户 B</option></select></div>
         <div className="lg:col-span-3"><label className="block text-sm font-medium mb-2">备注</label><input value={remark} onChange={e=>setRemark(e.target.value)} className="w-full border rounded-xl px-4 py-2.5 bg-white" /></div>

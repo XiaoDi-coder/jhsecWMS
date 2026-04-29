@@ -46,7 +46,7 @@ export const ReportInOutPage = () => {
         
         <select value={typeFilter} onChange={e=>{setTypeFilter(e.target.value);setPage(1);}} className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-white outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"><option value="">所有类型</option><option value="入库">入库</option><option value="出库">出库</option></select>
         <DateRangePicker startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} />
-        <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60 hidden xl:flex">
+        <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100 hidden xl:flex">
            <button onClick={()=>handleQuickDate(null)} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${!startDate && !endDate ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}>全部</button>
            <button onClick={()=>handleQuickDate(7)} className="px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-white hover:shadow-sm text-slate-600 transition-all">近7天</button>
            <button onClick={()=>handleQuickDate(30)} className="px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-white hover:shadow-sm text-slate-600 transition-all">近30天</button>
@@ -57,7 +57,7 @@ export const ReportInOutPage = () => {
         <div className="hidden md:block overflow-x-auto"><table className="w-full text-sm text-left whitespace-nowrap"><thead className="bg-slate-50 border-b"><tr><th className="p-4">日期</th><th className="p-4">类型</th><th className="p-4">单号</th><th className="p-4">商品</th><th className="p-4">对象</th><th className="p-4">金额</th></tr></thead><tbody>
           {paginated.length > 0 ? paginated.map(i=><tr key={i.id} className="border-b"><td className="p-4">{i.date}</td><td className="p-4"><Badge text={i.type}/></td><td className="p-4 text-blue-600">{i.orderNo}</td><td className="p-4">{i.product}</td><td className="p-4">{i.target}</td><td className="p-4 text-rose-500 font-bold">¥{i.total.toFixed(2)}</td></tr>) : <tr><td colSpan="6"><EmptyState/></td></tr>}
         </tbody></table></div>
-        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50/50">
+        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50">
           {paginated.length > 0 ? paginated.map(i => (
             <div key={i.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-2">
                <div className="flex justify-between items-center"><span className="font-bold text-blue-600">{i.orderNo}</span><span className="text-sm text-slate-500">{i.date}</span></div>
@@ -102,7 +102,7 @@ export const ReportSalesPage = () => {
         <SearchBar value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="搜索单号/商品" className="w-48 sm:w-64" />
         
         <DateRangePicker startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate} />
-        <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60 hidden xl:flex">
+        <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100 hidden xl:flex">
            <button onClick={()=>handleQuickDate(null)} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${!startDate && !endDate ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}>全部</button>
            <button onClick={()=>handleQuickDate(7)} className="px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-white hover:shadow-sm text-slate-600 transition-all">近7天</button>
            <button onClick={()=>handleQuickDate(30)} className="px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-white hover:shadow-sm text-slate-600 transition-all">近30天</button>
@@ -113,7 +113,7 @@ export const ReportSalesPage = () => {
         <div className="hidden md:block overflow-x-auto"><table className="w-full text-sm text-left whitespace-nowrap"><thead className="bg-slate-50 border-b"><tr><th className="p-4">日期</th><th className="p-4">单号</th><th className="p-4">客户</th><th className="p-4">商品</th><th className="p-4">数量</th><th className="p-4">销售额</th></tr></thead><tbody>
           {paginated.length > 0 ? paginated.map(i=><tr key={i.id} className="border-b"><td className="p-4">{i.date}</td><td className="p-4 text-blue-600 font-bold">{i.orderNo}</td><td className="p-4">{i.customer}</td><td className="p-4">{i.product}</td><td className="p-4 font-bold">{i.qty}</td><td className="p-4 text-rose-500 font-bold">¥{i.total.toFixed(2)}</td></tr>) : <tr><td colSpan="6"><EmptyState/></td></tr>}
         </tbody></table></div>
-        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50/50">
+        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50">
           {paginated.length > 0 ? paginated.map(i => (
             <div key={i.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-2">
                <div className="flex justify-between items-center"><span className="font-bold text-blue-600">{i.orderNo}</span><span className="text-sm text-slate-500">{i.date}</span></div>
@@ -177,7 +177,7 @@ export const ReportInventoryPage = () => {
         <div className="hidden md:block overflow-x-auto"><table className="w-full text-sm text-left whitespace-nowrap"><thead className="bg-slate-50 border-b"><tr><th className="p-4">仓库</th><th className="p-4">分类</th><th className="p-4">商品名称</th><th className="p-4">状态</th><th className="p-4">{asOfDate ? '期末数量' : '当前库存'}</th><th className="p-4">库存估值</th></tr></thead><tbody>
           {paginated.length > 0 ? paginated.map((i, idx)=><tr key={i.id || idx} className="border-b hover:bg-slate-50"><td className="p-4">{i.warehouse}</td><td className="p-4 text-slate-500">{i.category}</td><td className="p-4 text-blue-600 font-bold">{i.name}</td><td className="p-4"><Badge text={i.status}/></td><td className="p-4 font-bold">{i.currentStock}</td><td className="p-4 text-emerald-600 font-bold">¥{i.totalValue.toFixed(2)}</td></tr>) : <tr><td colSpan="6"><EmptyState/></td></tr>}
         </tbody></table></div>
-        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50/50">
+        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50">
           {paginated.length > 0 ? paginated.map(i => (
             <div key={i.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-2">
                <div className="flex justify-between items-center"><span className="font-bold text-blue-600">{i.name}</span><Badge text={i.status}/></div>

@@ -101,7 +101,7 @@ const MainLayout = () => {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-slate-50/50">
+      <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 z-10 shadow-sm">
           <div className="flex items-center gap-4">
             <button className="lg:hidden text-slate-500 hover:text-slate-800 p-1" onClick={() => setIsMobileMenuOpen(true)}><Menu size={24} /></button>

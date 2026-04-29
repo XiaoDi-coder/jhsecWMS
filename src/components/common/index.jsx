@@ -46,7 +46,7 @@ export const DateRangePicker = ({ startDate, setStartDate, endDate, setEndDate }
 export const Pagination = ({ current, total, totalPages, onChange }) => {
   if (total === 0) return null;
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-3 border border-t-0 border-slate-200 bg-slate-50/50 rounded-b-xl shadow-sm gap-3">
+    <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-3 border border-t-0 border-slate-200 bg-slate-50 rounded-b-xl shadow-sm gap-3">
       <div className="text-sm text-slate-500">共 <span className="font-bold text-slate-800">{total}</span> 条记录</div>
       <div className="flex items-center gap-2 sm:gap-4">
          <button onClick={()=>onChange(current-1)} disabled={current<=1} className="text-sm font-medium px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-blue-600 disabled:text-slate-300 disabled:bg-transparent transition-colors shadow-sm disabled:shadow-none">上一页</button>

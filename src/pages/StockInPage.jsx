@@ -94,7 +94,7 @@ export const StockInCreatePage = () => {
   return (
     <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-8 min-h-full border border-slate-100">
       <PageHeader title="新建入库单" onBack={() => setActiveTab('stock-in')} />
-      <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100 mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="bg-slate-50 rounded-xl p-5 border border-slate-100 mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div><label className="block text-sm font-medium mb-2">日期</label><input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full border rounded-xl px-4 py-2 text-sm bg-white" /></div>
         <div><label className="block text-sm font-medium mb-2">类型</label><select value={type} onChange={e=>setType(e.target.value)} className="w-full border rounded-xl px-4 py-2 text-sm bg-white"><option>采购入库</option><option>退货入库</option></select></div>
         <div><label className="block text-sm font-medium mb-2">供应商</label><select value={supplier} onChange={e=>setSupplier(e.target.value)} className="w-full border rounded-xl px-4 py-2 text-sm bg-white">{suppliers.map(s => <option key={s.id}>{s.name}</option>)}</select></div>

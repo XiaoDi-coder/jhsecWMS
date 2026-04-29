@@ -56,7 +56,7 @@ export const InventoryCheckPage = () => {
             </td></tr>
           )) : <tr><td colSpan="6"><EmptyState/></td></tr>}
         </tbody></table></div>
-        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50/50">
+        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50">
           {paginated.length > 0 ? paginated.map(i => (
             <div key={i.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-2">
                <div className="flex justify-between items-center"><span className="font-bold text-blue-600">{i.orderNo}</span><Badge text={i.status}/></div>
@@ -117,7 +117,7 @@ export const InventoryCheckCreatePage = () => {
   return (
     <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-8 min-h-full border border-slate-100">
       <PageHeader title="新建盘点单" onBack={() => setActiveTab('inventory-check')} />
-      <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100 mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="bg-slate-50 rounded-xl p-5 border border-slate-100 mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <div><label className="block text-sm font-medium mb-2">仓库</label><select value={warehouse} onChange={handleWarehouseChange} className="w-full border rounded-xl px-4 py-2 bg-white">{systemDict.warehouses.map(w=><option key={w} value={w}>{w}</option>)}</select></div>
         <div className="lg:col-span-2"><label className="block text-sm font-medium mb-2">备注</label><input value={remark} onChange={e=>setRemark(e.target.value)} className="w-full border rounded-xl px-4 py-2 bg-white"/></div>
       </div>

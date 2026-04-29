@@ -71,7 +71,7 @@ export const InventoryQueryPage = () => {
           </table>
         </div>
         {/* Mobile Card */}
-        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50/50">
+        <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50">
           {paginated.length > 0 ? paginated.map((item) => (
             <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-2">
                <div className="flex justify-between items-center"><span className="font-bold text-blue-600 text-base">{item.name}</span> <Badge text={item.status} /></div>
