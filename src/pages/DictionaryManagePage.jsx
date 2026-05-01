@@ -1,5 +1,5 @@
-import React, { useState, useContext } from 'react';
-import { Plus, Tag, X, BookOpen, Layers, Ruler } from 'lucide-react';
+import { useState, useContext } from 'react';
+import { Plus, Tag, X, Layers, Ruler } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { PageHeader, EmptyState } from '../components/common';
 

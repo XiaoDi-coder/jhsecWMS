@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useContext } from 'react';
-import { Search, RotateCw } from 'lucide-react';
+import { useState, useMemo, useContext } from 'react';
+import { RotateCw } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
 
@@ -9,8 +9,13 @@ export const InventoryQueryPage = () => {
   const [warehouse, setWarehouse] = useState('');
   const [page, setPage] = useState(1);
 
+  const productByName = useMemo(
+    () => Object.fromEntries(products.map((p) => [p.name, p])),
+    [products]
+  );
+
   const enhanced = useMemo(() => inventory.map(item => {
-    const prod = products.find(p => p.name === item.name) || {};
+    const prod = productByName[item.name] || {};
     return { 
       ...item, 
       code: item.code || prod.code || '-', 
@@ -21,7 +26,7 @@ export const InventoryQueryPage = () => {
   }).filter(i => 
     (i.name.includes(search) || (i.code && i.code.includes(search))) && 
     (warehouse === '' || i.warehouse === warehouse)
-  ), [inventory, products, search, warehouse]);
+  ), [inventory, productByName, search, warehouse]);
 
   const safePage = Math.max(1, Math.min(page, Math.ceil(enhanced.length / 10) || 1));
   const paginated = enhanced.slice((safePage - 1) * 10, safePage * 10);

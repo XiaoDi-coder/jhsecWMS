@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 import { TrendingUp, CreditCard, FileText, Box, ShoppingCart, Database, Activity } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { PageHeader } from '../components/common';
@@ -30,9 +30,10 @@ export const DashboardPage = () => {
   const yMax = Math.max(10, Math.ceil(Math.max(...trendData.flatMap(d=>[d.sales, d.stock]))/10)*10);
 
   const pieData = useMemo(() => {
+    const productByName = Object.fromEntries(products.map((p) => [p.name, p]));
     const catMap = {};
     inventory.forEach(inv => {
-      const p = products.find(prod => prod.name === inv.name);
+      const p = productByName[inv.name];
       const cat = p?.category || '未分类';
       const val = Number(inv.currentStock) * Number(p?.price || 0);
       catMap[cat] = (catMap[cat] || 0) + val;

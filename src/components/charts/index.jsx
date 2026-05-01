@@ -58,11 +58,13 @@ export const BITrendChart = ({ data, yMax }) => {
 export const BIPieChart = ({ data }) => {
   const [hoverInfo, setHoverInfo] = useState(null); 
   const total = data.reduce((sum, d) => sum + d.value, 0);
+  const TAU = Math.PI * 2;
+  const FULL_CIRCLE_EPSILON = 0.0001;
   const segments = total === 0
     ? []
     : data.reduce(
         (acc, d, i) => {
-          const angle = (d.value / total) * Math.PI * 2;
+          const angle = (d.value / total) * TAU;
           if (angle === 0) return acc;
           const startAngle = acc.currentAngle;
           const endAngle = startAngle + angle;
@@ -70,7 +72,7 @@ export const BIPieChart = ({ data }) => {
             currentAngle: endAngle,
             segments: [
               ...acc.segments,
-              { i, d, angle, startAngle, endAngle },
+              { i, d, angle, startAngle, endAngle, isFullCircle: angle >= TAU - FULL_CIRCLE_EPSILON },
             ],
           };
         },
@@ -81,7 +83,7 @@ export const BIPieChart = ({ data }) => {
     <div className="relative w-full h-full flex items-center justify-center">
       {total === 0 ? <div className="text-slate-400 text-sm">暂无资产数据</div> : (
         <svg viewBox="-130 -130 260 260" className="w-full h-full max-h-[200px] overflow-visible">
-          {segments.map(({ i, d, startAngle, endAngle }) => {
+          {segments.map(({ i, d, startAngle, endAngle, isFullCircle }) => {
             const x1 = Math.cos(startAngle) * 100; const y1 = Math.sin(startAngle) * 100;
             const x2 = Math.cos(endAngle) * 100; const y2 = Math.sin(endAngle) * 100;
             const angle = endAngle - startAngle;
@@ -94,6 +96,21 @@ export const BIPieChart = ({ data }) => {
             const midAngle = (startAngle + endAngle) / 2;
             const translateX = isHovered ? Math.cos(midAngle) * 8 : 0;
             const translateY = isHovered ? Math.sin(midAngle) * 8 : 0;
+
+            if (isFullCircle) {
+              return (
+                <g
+                  key={d.name}
+                  style={{ transform: `translate(${translateX}px, ${translateY}px)`, transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}
+                  onMouseMove={(e) => setHoverInfo({ idx: i, x: e.clientX, y: e.clientY })}
+                  onMouseLeave={() => setHoverInfo(null)}
+                  className="cursor-pointer"
+                >
+                  <circle cx="0" cy="0" r={outerR} fill={d.color} />
+                  <circle cx="0" cy="0" r={innerR} fill="#fff" />
+                </g>
+              );
+            }
 
             const pathData = `M ${ix1} ${iy1} L ${x1} ${y1} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 ${largeArc} 0 ${ix1} ${iy1} Z`;
 

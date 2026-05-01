@@ -1,4 +1,4 @@
-import { Calendar, ChevronLeft, ChevronRight, Search, FileText } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Search, FileText, ArrowLeft } from 'lucide-react';
 
 const badgeStyles = {
   '已审核': 'bg-emerald-50 text-emerald-600 border-emerald-200/50',
@@ -11,12 +11,23 @@ const badgeStyles = {
   '出库': 'bg-amber-50 text-amber-600 border-amber-200/50',
 };
 
-export const PageHeader = ({ title, action }) => (
+export const PageHeader = ({ title, action, onBack }) => (
   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-5 border-b border-slate-100/50 gap-4">
-    <h2 className="text-[22px] font-black tracking-tight text-slate-800 flex items-center gap-3">
+    <div className="flex items-center gap-3">
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+          aria-label="返回上一页"
+        >
+          <ArrowLeft size={16} />
+        </button>
+      )}
+      <h2 className="text-[22px] font-black tracking-tight text-slate-800 flex items-center gap-3">
       <div className="w-1.5 h-6 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full shadow-sm"></div>
       {title}
-    </h2>
+      </h2>
+    </div>
     {action && <div className="w-full sm:w-auto">{action}</div>}
   </div>
 );

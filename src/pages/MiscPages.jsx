@@ -1,7 +1,7 @@
-import React, { useState, useContext } from 'react';
-import { Package, ArrowLeft } from 'lucide-react';
+import { useState, useContext } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
-import { PageHeader, Badge } from '../components/common';
+import { Badge } from '../components/common';
 import myLogo from '../assets/logo.png';
 
 export const LoginPage = () => {

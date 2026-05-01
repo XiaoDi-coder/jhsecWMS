@@ -1,25 +1,38 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { lazy, Suspense, useContext, useEffect, useMemo, useState } from 'react';
 import { User, LogOut, ChevronDown, ChevronRight, Menu } from 'lucide-react';
 import { AppProvider, AppContext } from './context/AppContext';
 import { EmptyState } from './components/common'; // 移除了导致崩溃的 CustomModal
 import { menuConfig } from './data/mock';
 import myLogo from './assets/logo.png';
 
-// === 引入拆分后的所有页面模块 ===
-import { LoginPage, OrderDetailPage } from './pages/MiscPages';
-import { DashboardPage } from './pages/DashboardPage';
-import { InventoryQueryPage } from './pages/InventoryQueryPage';
-import { StockInPage, StockInCreatePage } from './pages/StockInPage';
-import { StockOutPage, StockOutCreatePage } from './pages/StockOutPage';
-import { InventoryCheckPage, InventoryCheckCreatePage } from './pages/InventoryCheckPage';
-import { SalesOrdersPage, SalesOrderCreatePage } from './pages/SalesOrdersPage';
-import { DealerManagePage, DealerManageCreatePage } from './pages/DealerManagePage';
-import { ReceivablesPage } from './pages/ReceivablesPage';
-import { PayablesPage } from './pages/PayablesPage';
-import { ProductsPage, CustomersPage, SuppliersPage, WarehousesPage } from './pages/BasicDataPages';
-import { DictionaryManagePage } from './pages/DictionaryManagePage';
-import { RolesManagePage, UsersManagePage, AuditLogsPage } from './pages/SystemManagePages';
-import { ReportInOutPage, ReportSalesPage, ReportInventoryPage } from './pages/ReportPages';
+// 页面懒加载：降低首屏体积，按需拉取功能页
+const LoginPage = lazy(() => import('./pages/MiscPages').then((m) => ({ default: m.LoginPage })));
+const OrderDetailPage = lazy(() => import('./pages/MiscPages').then((m) => ({ default: m.OrderDetailPage })));
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const InventoryQueryPage = lazy(() => import('./pages/InventoryQueryPage').then((m) => ({ default: m.InventoryQueryPage })));
+const StockInPage = lazy(() => import('./pages/StockInPage').then((m) => ({ default: m.StockInPage })));
+const StockInCreatePage = lazy(() => import('./pages/StockInPage').then((m) => ({ default: m.StockInCreatePage })));
+const StockOutPage = lazy(() => import('./pages/StockOutPage').then((m) => ({ default: m.StockOutPage })));
+const StockOutCreatePage = lazy(() => import('./pages/StockOutPage').then((m) => ({ default: m.StockOutCreatePage })));
+const InventoryCheckPage = lazy(() => import('./pages/InventoryCheckPage').then((m) => ({ default: m.InventoryCheckPage })));
+const InventoryCheckCreatePage = lazy(() => import('./pages/InventoryCheckPage').then((m) => ({ default: m.InventoryCheckCreatePage })));
+const SalesOrdersPage = lazy(() => import('./pages/SalesOrdersPage').then((m) => ({ default: m.SalesOrdersPage })));
+const SalesOrderCreatePage = lazy(() => import('./pages/SalesOrdersPage').then((m) => ({ default: m.SalesOrderCreatePage })));
+const DealerManagePage = lazy(() => import('./pages/DealerManagePage').then((m) => ({ default: m.DealerManagePage })));
+const DealerManageCreatePage = lazy(() => import('./pages/DealerManagePage').then((m) => ({ default: m.DealerManageCreatePage })));
+const ReceivablesPage = lazy(() => import('./pages/ReceivablesPage').then((m) => ({ default: m.ReceivablesPage })));
+const PayablesPage = lazy(() => import('./pages/PayablesPage').then((m) => ({ default: m.PayablesPage })));
+const ProductsPage = lazy(() => import('./pages/BasicDataPages').then((m) => ({ default: m.ProductsPage })));
+const CustomersPage = lazy(() => import('./pages/BasicDataPages').then((m) => ({ default: m.CustomersPage })));
+const SuppliersPage = lazy(() => import('./pages/BasicDataPages').then((m) => ({ default: m.SuppliersPage })));
+const WarehousesPage = lazy(() => import('./pages/BasicDataPages').then((m) => ({ default: m.WarehousesPage })));
+const DictionaryManagePage = lazy(() => import('./pages/DictionaryManagePage').then((m) => ({ default: m.DictionaryManagePage })));
+const RolesManagePage = lazy(() => import('./pages/SystemManagePages').then((m) => ({ default: m.RolesManagePage })));
+const UsersManagePage = lazy(() => import('./pages/SystemManagePages').then((m) => ({ default: m.UsersManagePage })));
+const AuditLogsPage = lazy(() => import('./pages/SystemManagePages').then((m) => ({ default: m.AuditLogsPage })));
+const ReportInOutPage = lazy(() => import('./pages/ReportPages').then((m) => ({ default: m.ReportInOutPage })));
+const ReportSalesPage = lazy(() => import('./pages/ReportPages').then((m) => ({ default: m.ReportSalesPage })));
+const ReportInventoryPage = lazy(() => import('./pages/ReportPages').then((m) => ({ default: m.ReportInventoryPage })));
 
 // ==========================================
 // 🚨 防崩溃护盾：拦截一切导致白屏的致命错误 🚨
@@ -58,6 +71,12 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center w-full h-full min-h-[240px]">
+    <div className="text-sm text-slate-500">页面加载中...</div>
+  </div>
+);
 
 // ==========================================
 // 💡 全局内联弹窗引擎 (无需外部引入) 💡
@@ -112,14 +131,14 @@ const GlobalModals = () => {
                       {f.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   ) : (
-                    <input type={f.type === 'password' ? 'password' : 'text'} value={formData[f.name] || ''} onChange={e => setFormData({...formData, [f.name]: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:ring-4 focus:border-blue-500 bg-slate-50 transition-all text-sm" placeholder={`请输入${f.label}`} />
+                    <input type={f.type || 'text'} value={formData[f.name] || ''} onChange={e => setFormData({...formData, [f.name]: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:ring-4 focus:border-blue-500 bg-slate-50 transition-all text-sm" placeholder={`请输入${f.label}`} />
                   )}
                 </div>
               ))}
             </div>
             <div className="flex gap-3 mt-6 pt-5 border-t border-slate-100">
               <button onClick={() => setFormConfig({ isOpen: false })} className="flex-1 bg-slate-100 text-slate-700 py-2.5 rounded-xl font-medium hover:bg-slate-200 transition-colors">取消</button>
-              <button onClick={() => { formConfig.onSubmit(formData); setFormConfig({ isOpen: false }); }} className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-colors">保存数据</button>
+              <button onClick={() => { if (formConfig.onSubmit(formData) !== false) setFormConfig({ isOpen: false }); }} className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-colors">保存数据</button>
             </div>
           </div>
         </div>
@@ -144,11 +163,7 @@ const MainLayout = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [setIsMobileMenuOpen]);
 
-  // 防御：未登录状态直接拦截
-  if (!isAuthenticated || !currentUser) return <LoginPage />;
-
-  const renderContent = () => {
-    const routes = {
+  const routes = useMemo(() => ({
       'dashboard': <DashboardPage />,
       'inventory-query': <InventoryQueryPage />, 'stock-in': <StockInPage />, 'stock-in-create': <StockInCreatePage />,
       'stock-out': <StockOutPage />, 'stock-out-create': <StockOutCreatePage />,
@@ -161,9 +176,16 @@ const MainLayout = () => {
       'report-inout': <ReportInOutPage />, 'report-sales': <ReportSalesPage />, 'report-inventory': <ReportInventoryPage />,
       'audit-logs': <AuditLogsPage />,
       'order-detail': <OrderDetailPage />
-    };
-    return routes[activeTab] || <EmptyState />;
-  };
+    }), []);
+
+  // 防御：未登录状态直接拦截
+  if (!isAuthenticated || !currentUser) {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <LoginPage />
+      </Suspense>
+    );
+  }
 
   const safeRoles = Array.isArray(roles) ? roles : [];
   const safeExpandedMenus = Array.isArray(expandedMenus) ? expandedMenus : [];
@@ -236,7 +258,9 @@ const MainLayout = () => {
           <div className="animate-in fade-in duration-500 max-w-[1600px] w-full mx-auto flex-1 flex flex-col h-full">
             {/* 🛡️ 这里包裹了错误边界护盾 🛡️ */}
             <ErrorBoundary>
-              {renderContent()}
+              <Suspense fallback={<LoadingFallback />}>
+                {routes[activeTab] || <EmptyState />}
+              </Suspense>
             </ErrorBoundary>
           </div>
         </main>

@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useContext } from 'react';
-import { Search, Eye, Edit, CreditCard, Check } from 'lucide-react';
+import { useState, useMemo, useContext } from 'react';
+import { Eye, Edit, CreditCard, Check } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
 import { getLocalDate } from '../utils';
