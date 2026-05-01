@@ -1,5 +1,7 @@
-import React, { createContext, useState, useCallback } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useState, useCallback } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { createId } from '../utils';
 
 export const AppContext = createContext();
 
@@ -70,7 +72,7 @@ export const AppProvider = ({ children }) => {
   const [auditLogs, setAuditLogs] = useLocalStorage('auditLogs', []);
 
   const addLog = useCallback((module, action, details) => {
-    const newLog = { id: Date.now() + Math.random(), timestamp: new Date().toLocaleString('zh-CN', { hour12: false }), user: currentUser?.realName || 'System', module, action, details };
+    const newLog = { id: createId(), timestamp: new Date().toLocaleString('zh-CN', { hour12: false }), user: currentUser?.realName || 'System', module, action, details };
     setAuditLogs(prev => [newLog, ...prev]);
   }, [currentUser, setAuditLogs]);
 

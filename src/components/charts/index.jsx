@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 export const BITrendChart = ({ data, yMax }) => {
   const [hoverIdx, setHoverIdx] = useState(null);
@@ -58,38 +58,55 @@ export const BITrendChart = ({ data, yMax }) => {
 export const BIPieChart = ({ data }) => {
   const [hoverInfo, setHoverInfo] = useState(null); 
   const total = data.reduce((sum, d) => sum + d.value, 0);
-  let cumulativeAngle = -Math.PI / 2;
+  const segments = total === 0
+    ? []
+    : data.reduce(
+        (acc, d, i) => {
+          const angle = (d.value / total) * Math.PI * 2;
+          if (angle === 0) return acc;
+          const startAngle = acc.currentAngle;
+          const endAngle = startAngle + angle;
+          return {
+            currentAngle: endAngle,
+            segments: [
+              ...acc.segments,
+              { i, d, angle, startAngle, endAngle },
+            ],
+          };
+        },
+        { currentAngle: -Math.PI / 2, segments: [] }
+      ).segments;
 
   return (
     <div className="relative w-full h-full flex items-center justify-center">
       {total === 0 ? <div className="text-slate-400 text-sm">暂无资产数据</div> : (
         <svg viewBox="-130 -130 260 260" className="w-full h-full max-h-[200px] overflow-visible">
-          {data.map((d, i) => {
-            const angle = (d.value / total) * Math.PI * 2;
-            if (angle === 0) return null;
-            const startAngle = cumulativeAngle;
-            const endAngle = cumulativeAngle + angle;
-            cumulativeAngle += angle;
-            
+          {segments.map(({ i, d, startAngle, endAngle }) => {
             const x1 = Math.cos(startAngle) * 100; const y1 = Math.sin(startAngle) * 100;
             const x2 = Math.cos(endAngle) * 100; const y2 = Math.sin(endAngle) * 100;
+            const angle = endAngle - startAngle;
             const largeArc = angle > Math.PI ? 1 : 0;
             const innerR = 60, outerR = 100;
             const ix1 = Math.cos(startAngle) * innerR, iy1 = Math.sin(startAngle) * innerR;
             const ix2 = Math.cos(endAngle) * innerR, iy2 = Math.sin(endAngle) * innerR;
-            
+
             const isHovered = hoverInfo?.idx === i;
             const midAngle = (startAngle + endAngle) / 2;
             const translateX = isHovered ? Math.cos(midAngle) * 8 : 0;
             const translateY = isHovered ? Math.sin(midAngle) * 8 : 0;
-            
+
             const pathData = `M ${ix1} ${iy1} L ${x1} ${y1} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 ${largeArc} 0 ${ix1} ${iy1} Z`;
 
             return (
-              <path key={d.name} d={pathData} fill={d.color} stroke="#fff" strokeWidth="2"
+              <path
+                key={d.name}
+                d={pathData}
+                fill={d.color}
+                stroke="#fff"
+                strokeWidth="2"
                 style={{ transform: `translate(${translateX}px, ${translateY}px)`, transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}
-                onMouseMove={(e) => setHoverInfo({ idx: i, x: e.clientX, y: e.clientY })} 
-                onMouseLeave={() => setHoverInfo(null)} 
+                onMouseMove={(e) => setHoverInfo({ idx: i, x: e.clientX, y: e.clientY })}
+                onMouseLeave={() => setHoverInfo(null)}
                 className="cursor-pointer"
               />
             );

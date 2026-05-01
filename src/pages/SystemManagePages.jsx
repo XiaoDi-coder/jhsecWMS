@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useContext } from 'react';
-import { Plus, Edit, Trash2, Lock, Download, X, CheckCircle2, Shield, UserCog, History } from 'lucide-react';
+import { useState, useMemo, useContext } from 'react';
+import { Plus, Edit, Trash2, Lock, Download, X, CheckCircle2, Shield, UserCog } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
 import { menuConfig } from '../data/mock';
-import { exportToCSV } from '../utils';
+import { exportToCSV, createId } from '../utils';
 
 // ========================================================
 // 1. 角色权限引擎
@@ -18,7 +18,7 @@ export const RolesManagePage = () => {
   const [perms, setPerms] = useState([]);
 
   // 防御性保护
-  const safeRoles = Array.isArray(roles) ? roles : [];
+  const safeRoles = useMemo(() => (Array.isArray(roles) ? roles : []), [roles]);
   const filtered = useMemo(() => safeRoles.filter(item => (item.name||'').includes(search) || (item.desc||'').includes(search)), [safeRoles, search]);
   const safePage = Math.max(1, Math.min(page, Math.ceil(filtered.length / 10) || 1));
   const paginated = filtered.slice((safePage - 1) * 10, safePage * 10);
@@ -41,7 +41,7 @@ export const RolesManagePage = () => {
       setRoles(safeRoles.map(r => r.id === editingRole.id ? { ...r, ...formData, permissions: perms } : r));
       addLog('角色管理', '编辑角色', `调整了角色 [${formData.name}] 的系统权限`);
     } else {
-      setRoles([{ id: Date.now(), ...formData, permissions: perms }, ...safeRoles]);
+      setRoles([{ id: createId(), ...formData, permissions: perms }, ...safeRoles]);
       addLog('角色管理', '新建角色', `创建了具有 ${perms.length} 项权限的新角色 [${formData.name}]`);
     }
     setIsDrawerOpen(false);
@@ -247,8 +247,8 @@ export const UsersManagePage = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
-  const safeUsers = Array.isArray(users) ? users : [];
-  const safeRoles = Array.isArray(roles) ? roles : [];
+  const safeUsers = useMemo(() => (Array.isArray(users) ? users : []), [users]);
+  const safeRoles = useMemo(() => (Array.isArray(roles) ? roles : []), [roles]);
   
   const filtered = useMemo(() => safeUsers.filter(item => (item.username||'').includes(search) || (item.realName||'').includes(search)), [safeUsers, search]);
   const safePage = Math.max(1, Math.min(page, Math.ceil(filtered.length / 10) || 1));
@@ -266,7 +266,9 @@ export const UsersManagePage = () => {
       if (data.password !== data.confirmPassword) return showMessage('错误', '密码不一致！');
       if (safeUsers.find(u => u.username === data.username)) return showMessage('错误', '该登录账号已存在！');
       const { confirmPassword, ...userData } = data;
-      setUsers([{ id: Date.now(), ...userData, status: '启用' }, ...safeUsers]);
+      // confirmPassword 仅用于校验，不写入用户数据
+      void confirmPassword;
+      setUsers([{ id: createId(), ...userData, status: '启用' }, ...safeUsers]);
       addLog('用户管理', '新建账号', `为员工 [${data.realName}] 开通了账号`);
     });
   };
@@ -398,7 +400,7 @@ export const AuditLogsPage = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
-  const safeLogs = Array.isArray(auditLogs) ? auditLogs : [];
+  const safeLogs = useMemo(() => (Array.isArray(auditLogs) ? auditLogs : []), [auditLogs]);
   const filtered = useMemo(() => safeLogs.filter(i => (i.module||'').includes(search) || (i.action||'').includes(search) || (i.user||'').includes(search) || (i.details||'').includes(search)), [safeLogs, search]);
   
   const safePage = Math.max(1, Math.min(page, Math.ceil(filtered.length / 10) || 1));

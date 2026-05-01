@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useContext } from 'react';
-import { Search, Plus, Eye, Check, Trash2, FileText, ClipboardList, Calculator } from 'lucide-react';
+import { useState, useMemo, useContext } from 'react';
+import { Plus, Eye, Check, Trash2, FileText, ClipboardList, Calculator } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
-import { getLocalDate } from '../utils';
+import { getLocalDate, createId, createOrderNo } from '../utils';
 
 export const InventoryCheckPage = () => {
   const { inventoryChecks, setInventoryChecks, showConfirm, showMessage, setActiveTab, setCurrentDetail, setInventory, products, addLog, systemDict } = useContext(AppContext);
@@ -26,7 +26,7 @@ export const InventoryCheckPage = () => {
             updatedInv[idx].status = updatedInv[idx].currentStock < updatedInv[idx].minStock ? '库存预警' : '正常';
           } else {
             const pInfo = products.find(p => p.name === item.product);
-            updatedInv.push({ id: Date.now()+Math.random(), code: pInfo?.code||'-', spec: pInfo?.spec||'-', name: item.product, warehouse: order.warehouse, currentStock: Number(item.actualQty), status: Number(item.actualQty) < 50 ? '库存预警' : '正常', minStock: 50 });
+            updatedInv.push({ id: createId(), code: pInfo?.code||'-', spec: pInfo?.spec||'-', name: item.product, warehouse: order.warehouse, currentStock: Number(item.actualQty), status: Number(item.actualQty) < 50 ? '库存预警' : '正常', minStock: 50 });
           }
         });
         return updatedInv;
@@ -81,7 +81,7 @@ export const InventoryCheckCreatePage = () => {
   const defaultInvItem = inventory.find(i => i.name === defaultProd && i.warehouse === defaultWh);
   const defaultSysQty = defaultInvItem ? Number(defaultInvItem.currentStock) : 0;
 
-  const [items, setItems] = useState([{ id: Date.now() + Math.random(), product: defaultProd, sysQty: defaultSysQty, actualQty: defaultSysQty, price: products[0]?.price || 0 }]);
+  const [items, setItems] = useState(() => [{ id: createId(), product: defaultProd, sysQty: defaultSysQty, actualQty: defaultSysQty, price: products[0]?.price || 0 }]);
   const [warehouse, setWarehouse] = useState(defaultWh); 
   const [remark, setRemark] = useState('');
   
@@ -93,8 +93,8 @@ export const InventoryCheckCreatePage = () => {
     const uniqueProducts = new Set(items.map(i => i.product));
     if (uniqueProducts.size !== items.length) return showMessage('重复拦截', '请合并重复商品的数量后重试！');
 
-    const orderNo = 'PD' + Date.now();
-    setInventoryChecks(prev => [{ id: Date.now(), orderNo, warehouse, date: getLocalDate(), itemCount: items.length, diffAmount: totalDiffAmount.toFixed(2), status: '盘点中', operator: 'admin', items, remark }, ...prev]);
+    const orderNo = createOrderNo('PD');
+    setInventoryChecks(prev => [{ id: createId(), orderNo, warehouse, date: getLocalDate(), itemCount: items.length, diffAmount: totalDiffAmount.toFixed(2), status: '盘点中', operator: 'admin', items, remark }, ...prev]);
     addLog('库存盘点', '发起盘点', `单号: ${orderNo}, 差异: ¥${totalDiffAmount.toFixed(2)}`);
     setActiveTab('inventory-check');
   };
@@ -132,7 +132,7 @@ export const InventoryCheckCreatePage = () => {
           <h3 className="text-base font-bold flex items-center gap-2 text-slate-800"><ClipboardList size={18} className="text-blue-500" /> 录入盘点数据</h3>
           <button onClick={() => {
             const pName = products[0]?.name||''; const invItem = inventory.find(i => i.name === pName && i.warehouse === warehouse);
-            setItems([...items, { id: Date.now() + Math.random(), product: pName, sysQty: invItem ? Number(invItem.currentStock) : 0, actualQty: invItem ? Number(invItem.currentStock) : 0, price: products[0]?.price || 0 }]);
+            setItems([...items, { id: createId(), product: pName, sysQty: invItem ? Number(invItem.currentStock) : 0, actualQty: invItem ? Number(invItem.currentStock) : 0, price: products[0]?.price || 0 }]);
           }} className="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold flex gap-1.5 hover:bg-blue-100 transition-colors"><Plus size={16}/> 增加一行</button>
         </div>
         <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm"><table className="w-full text-sm text-left whitespace-nowrap"><thead className="bg-slate-50 border-b"><tr><th className="p-4 font-medium text-slate-600 min-w-[200px]">实物商品</th><th className="p-4 font-medium text-slate-600 w-28">系统账面</th><th className="p-4 font-medium text-slate-600 w-28">实际盘点</th><th className="p-4 font-medium text-slate-600 w-28">差异数量</th><th className="p-4 font-medium text-slate-600 w-28">商品估价</th><th className="p-4 font-medium text-slate-600 w-28">差异金额</th><th className="p-4 font-medium text-slate-600 w-20 sticky right-0 bg-slate-50">操作</th></tr></thead><tbody>

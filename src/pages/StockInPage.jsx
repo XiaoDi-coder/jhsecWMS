@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useContext } from 'react';
-import { Search, Plus, Eye, Check, Trash2, FileText, PackageSearch, Calculator } from 'lucide-react';
+import { useState, useMemo, useContext } from 'react';
+import { Plus, Eye, Check, Trash2, FileText, PackageSearch, Calculator } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
-import { getLocalDate } from '../utils';
+import { getLocalDate, createId, createOrderNo } from '../utils';
 
 export const StockInPage = () => {
   const { stockIn, setStockIn, showConfirm, showMessage, setActiveTab, setCurrentDetail, setInventory, setPayables, addLog, products, systemDict } = useContext(AppContext);
@@ -26,7 +26,7 @@ export const StockInPage = () => {
             updatedInv[idx].status = updatedInv[idx].currentStock < updatedInv[idx].minStock ? '库存预警' : '正常';
           } else {
             const pInfo = products.find(p => p.name === item.product);
-            updatedInv.push({ id: Date.now()+Math.random(), code: pInfo?.code||'-', spec: pInfo?.spec||'-', name: item.product, warehouse: order.warehouse, currentStock: Number(item.qty), status: '正常', minStock: 50 });
+            updatedInv.push({ id: createId(), code: pInfo?.code||'-', spec: pInfo?.spec||'-', name: item.product, warehouse: order.warehouse, currentStock: Number(item.qty), status: '正常', minStock: 50 });
           }
         });
         return updatedInv;
@@ -34,7 +34,7 @@ export const StockInPage = () => {
       if (order.type === '采购入库' || order.type === '退货入库') {
         setPayables(prev => {
           if (prev.some(p => p.orderNo === order.orderNo)) return prev;
-          return [{ id: Date.now(), orderNo: order.orderNo, supplier: order.supplier, totalAmount: order.amount, paidAmount: '0.00', unpaidAmount: order.amount, status: '未结清', date: order.date, payments: [] }, ...prev];
+          return [{ id: createId(), orderNo: order.orderNo, supplier: order.supplier, totalAmount: order.amount, paidAmount: '0.00', unpaidAmount: order.amount, status: '未结清', date: order.date, payments: [] }, ...prev];
         });
       }
       addLog('入库管理', '审核通过', `单号: ${order.orderNo}, 已同步库存及财务应付`);
@@ -83,7 +83,7 @@ export const StockInPage = () => {
 
 export const StockInCreatePage = () => {
   const { setStockIn, setActiveTab, showMessage, suppliers, products, addLog, systemDict } = useContext(AppContext);
-  const [items, setItems] = useState([{ id: Date.now() + Math.random(), product: products[0]?.name || '', qty: 1, price: products[0]?.price || 0 }]);
+  const [items, setItems] = useState(() => [{ id: createId(), product: products[0]?.name || '', qty: 1, price: products[0]?.price || 0 }]);
   const [supplier, setSupplier] = useState(suppliers[0]?.name || ''); const [warehouse, setWarehouse] = useState(systemDict.warehouses[0]);
   const [type, setType] = useState('采购入库'); const [remark, setRemark] = useState(''); const [date, setDate] = useState(getLocalDate());
   const total = items.reduce((sum, item) => sum + (Number(item.qty) * Number(item.price)), 0);
@@ -95,8 +95,8 @@ export const StockInCreatePage = () => {
     const uniqueProducts = new Set(items.map(i => i.product));
     if (uniqueProducts.size !== items.length) return showMessage('排重拦截', '同一张单据内禁止分多行录入同款商品，请合并数量！');
 
-    const orderNo = 'RK' + Date.now();
-    setStockIn(prev => [{ id: Date.now(), orderNo, type, warehouse, supplier, date, amount: total.toFixed(2), status: '待审核', operator: 'admin', items, remark }, ...prev]);
+    const orderNo = createOrderNo('RK');
+    setStockIn(prev => [{ id: createId(), orderNo, type, warehouse, supplier, date, amount: total.toFixed(2), status: '待审核', operator: 'admin', items, remark }, ...prev]);
     addLog('入库管理', '新建单据', `已创建草稿入库单: ${orderNo}`);
     setActiveTab('stock-in');
   };
@@ -126,7 +126,7 @@ export const StockInCreatePage = () => {
       <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-100 shadow-sm flex-1">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-base font-bold flex items-center gap-2 text-slate-800"><PackageSearch size={18} className="text-emerald-500" /> 入库商品明细</h3>
-          <button onClick={() => setItems([...items, { id: Date.now() + Math.random(), product: products[0]?.name||'', qty: 1, price: products[0]?.price || 0 }])} className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 hover:bg-emerald-100 transition-colors"><Plus size={16}/> 增加一行</button>
+          <button onClick={() => setItems([...items, { id: createId(), product: products[0]?.name||'', qty: 1, price: products[0]?.price || 0 }])} className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 hover:bg-emerald-100 transition-colors"><Plus size={16}/> 增加一行</button>
         </div>
         <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm"><table className="w-full text-sm text-left whitespace-nowrap"><thead className="bg-slate-50 border-b"><tr><th className="p-4 font-medium text-slate-600 min-w-[200px]">商品名称</th><th className="p-4 font-medium text-slate-600 w-32">入库数量</th><th className="p-4 font-medium text-slate-600 w-32">入库单价</th><th className="p-4 font-medium text-slate-600 w-32">小计金额</th><th className="p-4 font-medium text-slate-600 w-20 sticky right-0 bg-slate-50">操作</th></tr></thead><tbody>
           {items.map((item, idx) => (

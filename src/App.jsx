@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Package, User, LogOut, ChevronDown, ChevronRight, Menu } from 'lucide-react';
+import { User, LogOut, ChevronDown, ChevronRight, Menu } from 'lucide-react';
 import { AppProvider, AppContext } from './context/AppContext';
 import { EmptyState } from './components/common'; // 移除了导致崩溃的 CustomModal
 import { menuConfig } from './data/mock';
@@ -67,8 +67,11 @@ const GlobalModals = () => {
   const [formData, setFormData] = useState({});
 
   useEffect(() => {
-    if (formConfig.isOpen) setFormData(formConfig.defaultValues || {});
-  }, [formConfig]);
+    if (!formConfig.isOpen) return;
+    const next = formConfig.defaultValues || {};
+    // 避免在 effect 同步 setState 引发级联渲染；next tick 再更新表单默认值
+    Promise.resolve().then(() => setFormData(next));
+  }, [formConfig.isOpen, formConfig.defaultValues]);
 
   return (
     <>

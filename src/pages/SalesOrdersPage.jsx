@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useContext } from 'react';
-import { Search, Plus, Eye, Edit, Check, Trash2, FileText, ShoppingBag, Calculator } from 'lucide-react';
+import { useState, useMemo, useContext } from 'react';
+import { Plus, Eye, Edit, Check, Trash2, FileText, ShoppingBag, Calculator } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
-import { getLocalDate } from '../utils';
+import { getLocalDate, createId, createOrderNo } from '../utils';
 
 export const SalesOrdersPage = () => {
   const { salesOrders, setSalesOrders, setActiveTab, showConfirm, showMessage, setCurrentDetail, setReceivables, setEditingRecord, addLog } = useContext(AppContext);
@@ -30,7 +30,7 @@ export const SalesOrdersPage = () => {
             return r;
           });
         }
-        return [{ id: Date.now(), orderNo: order.orderNo, customer: order.customer, totalAmount: order.totalAmount, receivedAmount: '0.00', unreceivedAmount: order.totalAmount, status: '未结清', date: order.date, payments: [] }, ...prev];
+        return [{ id: createId(), orderNo: order.orderNo, customer: order.customer, totalAmount: order.totalAmount, receivedAmount: '0.00', unreceivedAmount: order.totalAmount, status: '未结清', date: order.date, payments: [] }, ...prev];
       });
       addLog('销售订单', '单据审核', `已审核单据: ${order.orderNo}`);
     });
@@ -75,7 +75,10 @@ export const SalesOrdersPage = () => {
 
 export const SalesOrderCreatePage = () => {
   const { setSalesOrders, setActiveTab, showMessage, editingRecord, setEditingRecord, products, addLog } = useContext(AppContext);
-  const [items, setItems] = useState(editingRecord ? editingRecord.items.map(i => ({...i, id: i.id || Date.now() + Math.random()})) : [{ id: Date.now() + Math.random(), product: products[0]?.name||'', qty: 1, price: products[0]?.price||0 }]);
+  const [items, setItems] = useState(() => editingRecord
+    ? editingRecord.items.map(i => ({...i, id: i.id || createId()}))
+    : [{ id: createId(), product: products[0]?.name||'', qty: 1, price: products[0]?.price||0 }]
+  );
   const [customer, setCustomer] = useState(editingRecord ? editingRecord.customer : '客户 A'); 
   const [remark, setRemark] = useState(editingRecord ? editingRecord.remark : ''); 
   const [date, setDate] = useState(editingRecord ? editingRecord.date : getLocalDate());
@@ -89,7 +92,7 @@ export const SalesOrderCreatePage = () => {
 
     const isModifying = editingRecord && editingRecord.status === '已审核';
     const newStatus = isModifying ? '修改申请中' : (editingRecord ? editingRecord.status : '草稿');
-    const orderNo = editingRecord ? editingRecord.orderNo : 'SO' + Date.now();
+    const orderNo = editingRecord ? editingRecord.orderNo : createOrderNo('SO');
     const orderData = { orderNo, customer, itemCount: items.length + '种', totalCount: items.reduce((s, i) => s + Number(i.qty), 0), totalAmount: total.toFixed(2), status: newStatus, operator: editingRecord ? editingRecord.operator : 'admin', items, remark, date };
 
     if (editingRecord) {
@@ -97,7 +100,7 @@ export const SalesOrderCreatePage = () => {
       if (isModifying) showMessage('成功', '修改申请已提交，等待主管审批！');
       addLog('销售订单', '编辑修改', `修改了单据: ${orderNo}`);
     } else {
-      setSalesOrders(prev => [{ id: Date.now(), ...orderData }, ...prev]);
+      setSalesOrders(prev => [{ id: createId(), ...orderData }, ...prev]);
       addLog('销售订单', '新建单据', `创建了草稿: ${orderNo}`);
     }
     setEditingRecord(null); setActiveTab('sales-orders');
@@ -128,7 +131,7 @@ export const SalesOrderCreatePage = () => {
       <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-100 shadow-sm flex-1">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-base font-bold flex items-center gap-2 text-slate-800"><ShoppingBag size={18} className="text-blue-500" /> 销售清单明细</h3>
-          <button onClick={() => setItems([...items, { id: Date.now() + Math.random(), product: products[0]?.name||'', qty: 1, price: products[0]?.price||0 }])} className="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 hover:bg-blue-100 transition-colors"><Plus size={16}/> 增加一行</button>
+          <button onClick={() => setItems([...items, { id: createId(), product: products[0]?.name||'', qty: 1, price: products[0]?.price||0 }])} className="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 hover:bg-blue-100 transition-colors"><Plus size={16}/> 增加一行</button>
         </div>
         <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm"><table className="w-full text-sm text-left whitespace-nowrap"><thead className="bg-slate-50 border-b"><tr><th className="p-4 font-medium text-slate-600 min-w-[200px]">售出商品</th><th className="p-4 font-medium text-slate-600 w-32">销售数量</th><th className="p-4 font-medium text-slate-600 w-32">成交单价</th><th className="p-4 font-medium text-slate-600 w-32">小计金额</th><th className="p-4 font-medium text-slate-600 w-20 sticky right-0 bg-slate-50">操作</th></tr></thead><tbody>
           {items.map((item, idx) => (

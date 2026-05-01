@@ -1,5 +1,15 @@
-import React from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Search, FileText } from 'lucide-react';
+
+const badgeStyles = {
+  '已审核': 'bg-emerald-50 text-emerald-600 border-emerald-200/50',
+  '待审核': 'bg-amber-50 text-amber-600 border-amber-200/50',
+  '已作废': 'bg-rose-50 text-rose-600 border-rose-200/50',
+  '正常': 'bg-emerald-50 text-emerald-600 border-emerald-200/50',
+  '启用': 'bg-blue-50 text-blue-600 border-blue-200/50',
+  '禁用': 'bg-rose-50 text-rose-600 border-rose-200/50',
+  '入库': 'bg-emerald-50 text-emerald-600 border-emerald-200/50',
+  '出库': 'bg-amber-50 text-amber-600 border-amber-200/50',
+};
 
 export const PageHeader = ({ title, action }) => (
   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-5 border-b border-slate-100/50 gap-4">
@@ -12,18 +22,14 @@ export const PageHeader = ({ title, action }) => (
 );
 
 export const Badge = ({ text, type }) => {
-  const styles = {
-    '已审核': 'bg-emerald-50 text-emerald-600 border-emerald-200/50',
-    '待审核': 'bg-amber-50 text-amber-600 border-amber-200/50',
-    '已作废': 'bg-rose-50 text-rose-600 border-rose-200/50',
-    '正常': 'bg-emerald-50 text-emerald-600 border-emerald-200/50',
-    '启用': 'bg-blue-50 text-blue-600 border-blue-200/50',
-    '禁用': 'bg-rose-50 text-rose-600 border-rose-200/50',
-    '入库': 'bg-emerald-50 text-emerald-600 border-emerald-200/50',
-    '出库': 'bg-amber-50 text-amber-600 border-amber-200/50',
-  };
-  const colorStyle = styles[text] || (type === 'danger' ? 'bg-rose-50 text-rose-600 border-rose-200/50' : type === 'success' ? 'bg-emerald-50 text-emerald-600 border-emerald-200/50' : 'bg-slate-100 text-slate-600 border-slate-200/50');
-  
+  const colorStyle =
+    badgeStyles[text] ||
+    (type === 'danger'
+      ? 'bg-rose-50 text-rose-600 border-rose-200/50'
+      : type === 'success'
+        ? 'bg-emerald-50 text-emerald-600 border-emerald-200/50'
+        : 'bg-slate-100 text-slate-600 border-slate-200/50');
+
   return <span className={`px-2.5 py-1 rounded-md text-xs font-bold border shadow-sm ${colorStyle}`}>{text}</span>;
 };
 

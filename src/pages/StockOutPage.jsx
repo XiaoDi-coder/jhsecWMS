@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useContext } from 'react';
-import { Search, Plus, Eye, Check, Trash2, FileText, Send, Calculator } from 'lucide-react';
+import { useState, useMemo, useContext } from 'react';
+import { Plus, Eye, Check, Trash2, FileText, Send, Calculator } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
-import { getLocalDate } from '../utils';
+import { getLocalDate, createId, createOrderNo } from '../utils';
 
 export const StockOutPage = () => {
   const { stockOut, setStockOut, showConfirm, showMessage, setActiveTab, setCurrentDetail, setInventory, addLog, systemDict } = useContext(AppContext);
@@ -74,7 +74,7 @@ export const StockOutPage = () => {
 
 export const StockOutCreatePage = () => {
   const { setStockOut, setActiveTab, showMessage, customers, products, inventory, addLog, systemDict } = useContext(AppContext);
-  const [items, setItems] = useState([{ id: Date.now() + Math.random(), product: products[0]?.name || '', qty: 1, price: products[0]?.price || 0 }]);
+  const [items, setItems] = useState(() => [{ id: createId(), product: products[0]?.name || '', qty: 1, price: products[0]?.price || 0 }]);
   const [customer, setCustomer] = useState(customers[0]?.name || ''); const [warehouse, setWarehouse] = useState(systemDict.warehouses[0]);
   const [type, setType] = useState('销售出库'); const [remark, setRemark] = useState(''); const [date, setDate] = useState(getLocalDate());
   const total = items.reduce((sum, item) => sum + (Number(item.qty) * Number(item.price)), 0);
@@ -95,8 +95,8 @@ export const StockOutCreatePage = () => {
        if (currentStock < reqQty) return showMessage('库存不足被拦截', `商品 [${productName}] 在 [${warehouse}] 的库存仅 ${currentStock}件（需 ${reqQty}件）！`);
     }
 
-    const orderNo = 'CK' + Date.now();
-    setStockOut(prev => [{ id: Date.now(), orderNo, type, warehouse, customer, date, amount: total.toFixed(2), status: '待发货', operator: 'admin', items, remark }, ...prev]);
+    const orderNo = createOrderNo('CK');
+    setStockOut(prev => [{ id: createId(), orderNo, type, warehouse, customer, date, amount: total.toFixed(2), status: '待发货', operator: 'admin', items, remark }, ...prev]);
     addLog('出库管理', '新建单据', `已创建草稿出库单: ${orderNo}`);
     setActiveTab('stock-out');
   };
@@ -126,7 +126,7 @@ export const StockOutCreatePage = () => {
       <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-100 shadow-sm flex-1">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-base font-bold flex items-center gap-2 text-slate-800"><Send size={18} className="text-amber-500" /> 待出库明细</h3>
-          <button onClick={() => setItems([...items, { id: Date.now() + Math.random(), product: products[0]?.name||'', qty: 1, price: products[0]?.price || 0 }])} className="bg-amber-50 text-amber-600 px-4 py-2 rounded-xl text-sm font-bold flex gap-1.5 hover:bg-amber-100 transition-colors"><Plus size={16}/> 增加一行</button>
+          <button onClick={() => setItems([...items, { id: createId(), product: products[0]?.name||'', qty: 1, price: products[0]?.price || 0 }])} className="bg-amber-50 text-amber-600 px-4 py-2 rounded-xl text-sm font-bold flex gap-1.5 hover:bg-amber-100 transition-colors"><Plus size={16}/> 增加一行</button>
         </div>
         <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm"><table className="w-full text-sm text-left whitespace-nowrap"><thead className="bg-slate-50 border-b"><tr><th className="p-4 font-medium text-slate-600 min-w-[200px]">商品名称</th><th className="p-4 font-medium text-slate-600 w-32">出库数量</th><th className="p-4 font-medium text-slate-600 w-32">出库单价</th><th className="p-4 font-medium text-slate-600 w-32">小计金额</th><th className="p-4 font-medium text-slate-600 w-20 sticky right-0 bg-slate-50">操作</th></tr></thead><tbody>
           {items.map((item, idx) => (

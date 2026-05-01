@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useContext } from 'react';
+import { useState, useMemo, useContext } from 'react';
 import { Download, TrendingUp, ArrowRightLeft, Package, Calendar, BarChart3, DollarSign, ShoppingBag, Box, FileText } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { PageHeader, DateRangePicker, Pagination, EmptyState, SearchBar, Badge } from '../components/common';
-import { exportToCSV } from '../utils';
+import { exportToCSV, getLocalDate, getLocalDateNDaysAgo } from '../utils';
 
 // ========================================================
 // 专属组件：高级数据汇总卡片
@@ -34,47 +34,48 @@ export const ReportInOutPage = () => {
   const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
 
-  const safeStockIn = Array.isArray(stockIn) ? stockIn : [];
-  const safeStockOut = Array.isArray(stockOut) ? stockOut : [];
+  const safeStockIn = useMemo(() => (Array.isArray(stockIn) ? stockIn : []), [stockIn]);
+  const safeStockOut = useMemo(() => (Array.isArray(stockOut) ? stockOut : []), [stockOut]);
 
-  const filtered = useMemo(() => {
+  const rawEntries = useMemo(() => {
     const list = [];
+
     safeStockIn.forEach(o => {
       if (!o) return;
       const items = Array.isArray(o.items) ? o.items : [];
       items.forEach(i => {
         if (!i) return;
-        list.push({ 
-          id: `in-${o?.id}-${i?.id}`, 
-          date: String(o?.date || ''), 
-          orderNo: String(o?.orderNo || ''), 
-          type: String(o?.type || ''), 
-          target: String(o?.supplier || ''), 
-          product: String(i?.product || ''), 
-          qty: Number(i?.qty) || 0, 
-          price: Number(i?.price) || 0, 
-          total: (Number(i?.qty) || 0) * (Number(i?.price) || 0), 
-          status: String(o?.status || '') 
+        list.push({
+          id: `in-${o?.id}-${i?.id}`,
+          date: String(o?.date || ''),
+          orderNo: String(o?.orderNo || ''),
+          type: String(o?.type || ''),
+          target: String(o?.supplier || ''),
+          product: String(i?.product || ''),
+          qty: Number(i?.qty) || 0,
+          price: Number(i?.price) || 0,
+          total: (Number(i?.qty) || 0) * (Number(i?.price) || 0),
+          status: String(o?.status || ''),
         });
       });
     });
-    
+
     safeStockOut.forEach(o => {
       if (!o) return;
       const items = Array.isArray(o.items) ? o.items : [];
       items.forEach(i => {
         if (!i) return;
-        list.push({ 
-          id: `out-${o?.id}-${i?.id}`, 
-          date: String(o?.date || ''), 
-          orderNo: String(o?.orderNo || ''), 
-          type: String(o?.type || ''), 
-          target: String(o?.customer || ''), 
-          product: String(i?.product || ''), 
-          qty: Number(i?.qty) || 0, 
-          price: Number(i?.price) || 0, 
-          total: (Number(i?.qty) || 0) * (Number(i?.price) || 0), 
-          status: String(o?.status || '') 
+        list.push({
+          id: `out-${o?.id}-${i?.id}`,
+          date: String(o?.date || ''),
+          orderNo: String(o?.orderNo || ''),
+          type: String(o?.type || ''),
+          target: String(o?.customer || ''),
+          product: String(i?.product || ''),
+          qty: Number(i?.qty) || 0,
+          price: Number(i?.price) || 0,
+          total: (Number(i?.qty) || 0) * (Number(i?.price) || 0),
+          status: String(o?.status || ''),
         });
       });
     });
@@ -84,16 +85,20 @@ export const ReportInOutPage = () => {
       const timeB = new Date(b.date).getTime();
       return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
     });
-    
-    return list.filter(i => {
-      const s = String(search || '').toLowerCase();
+
+    return list;
+  }, [safeStockIn, safeStockOut]);
+
+  const filtered = useMemo(() => {
+    const s = String(search || '').toLowerCase();
+    return rawEntries.filter(i => {
       const matchSearch = String(i.orderNo).toLowerCase().includes(s) || String(i.product).toLowerCase().includes(s);
       const matchType = !typeFilter || String(i.type).includes(typeFilter);
       const matchStart = !startDate || i.date >= startDate;
       const matchEnd = !endDate || i.date <= endDate;
       return matchSearch && matchType && matchStart && matchEnd;
     });
-  }, [safeStockIn, safeStockOut, search, typeFilter, startDate, endDate]);
+  }, [rawEntries, search, typeFilter, startDate, endDate]);
 
   const safeFiltered = Array.isArray(filtered) ? filtered : [];
   const filteredLength = safeFiltered.length || 0;
@@ -105,9 +110,8 @@ export const ReportInOutPage = () => {
 
   const handleQuickDate = (days) => {
     if (days === null) { setStartDate(''); setEndDate(''); return; }
-    const end = new Date(); const start = new Date(); start.setDate(end.getDate() - days);
-    end.setMinutes(end.getMinutes() - end.getTimezoneOffset()); start.setMinutes(start.getMinutes() - start.getTimezoneOffset());
-    setEndDate(end.toISOString().split('T')[0]); setStartDate(start.toISOString().split('T')[0]);
+    setEndDate(getLocalDate());
+    setStartDate(getLocalDateNDaysAgo(days));
     setPage(1);
   };
 
@@ -205,43 +209,49 @@ export const ReportSalesPage = () => {
   const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
 
-  const safeSalesOrders = Array.isArray(salesOrders) ? salesOrders : [];
+  const safeSalesOrders = useMemo(() => (Array.isArray(salesOrders) ? salesOrders : []), [salesOrders]);
 
-  const filtered = useMemo(() => {
+  const rawEntries = useMemo(() => {
     const list = [];
+
     safeSalesOrders.forEach(o => {
       if (!o) return;
       const items = Array.isArray(o.items) ? o.items : [];
       items.forEach(i => {
         if (!i) return;
-        list.push({ 
-          id: `${o?.id}-${i?.id}`, 
-          date: String(o?.date || ''), 
-          orderNo: String(o?.orderNo || ''), 
-          customer: String(o?.customer || ''), 
-          product: String(i?.product || ''), 
-          qty: Number(i?.qty) || 0, 
-          total: (Number(i?.qty) || 0) * (Number(i?.price) || 0) 
+        list.push({
+          id: `${o?.id}-${i?.id}`,
+          date: String(o?.date || ''),
+          orderNo: String(o?.orderNo || ''),
+          customer: String(o?.customer || ''),
+          product: String(i?.product || ''),
+          qty: Number(i?.qty) || 0,
+          total: (Number(i?.qty) || 0) * (Number(i?.price) || 0),
         });
       });
     });
-    
-    list.sort((a,b) => {
+
+    list.sort((a, b) => {
       const timeA = new Date(a.date).getTime();
       const timeB = new Date(b.date).getTime();
       return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
     });
-    
-    return list.filter(i => {
-      const s = String(search || '').toLowerCase();
-      const matchSearch = String(i.orderNo).toLowerCase().includes(s) || 
-                          String(i.product).toLowerCase().includes(s) || 
-                          String(i.customer).toLowerCase().includes(s);
+
+    return list;
+  }, [safeSalesOrders]);
+
+  const filtered = useMemo(() => {
+    const s = String(search || '').toLowerCase();
+    return rawEntries.filter(i => {
+      const matchSearch =
+        String(i.orderNo).toLowerCase().includes(s) ||
+        String(i.product).toLowerCase().includes(s) ||
+        String(i.customer).toLowerCase().includes(s);
       const matchStart = !startDate || i.date >= startDate;
       const matchEnd = !endDate || i.date <= endDate;
       return matchSearch && matchStart && matchEnd;
     });
-  }, [safeSalesOrders, search, startDate, endDate]);
+  }, [rawEntries, search, startDate, endDate]);
   
   const safeFiltered = Array.isArray(filtered) ? filtered : [];
   const filteredLength = safeFiltered.length || 0;
@@ -254,9 +264,8 @@ export const ReportSalesPage = () => {
 
   const handleQuickDate = (days) => {
     if (days === null) { setStartDate(''); setEndDate(''); return; }
-    const end = new Date(); const start = new Date(); start.setDate(end.getDate() - days);
-    end.setMinutes(end.getMinutes() - end.getTimezoneOffset()); start.setMinutes(start.getMinutes() - start.getTimezoneOffset());
-    setEndDate(end.toISOString().split('T')[0]); setStartDate(start.toISOString().split('T')[0]);
+    setEndDate(getLocalDate());
+    setStartDate(getLocalDateNDaysAgo(days));
     setPage(1);
   };
 
@@ -349,54 +358,101 @@ export const ReportInventoryPage = () => {
   const [asOfDate, setAsOfDate] = useState(''); 
   const [page, setPage] = useState(1);
 
-  const safeInventory = Array.isArray(inventory) ? inventory : [];
-  const safeProducts = Array.isArray(products) ? products : [];
-  const safeStockIn = Array.isArray(stockIn) ? stockIn : [];
-  const safeStockOut = Array.isArray(stockOut) ? stockOut : [];
+  const safeInventory = useMemo(() => (Array.isArray(inventory) ? inventory : []), [inventory]);
+  const safeProducts = useMemo(() => (Array.isArray(products) ? products : []), [products]);
+  const safeStockIn = useMemo(() => (Array.isArray(stockIn) ? stockIn : []), [stockIn]);
+  const safeStockOut = useMemo(() => (Array.isArray(stockOut) ? stockOut : []), [stockOut]);
+
+  const productInfoByName = useMemo(() => {
+    const map = new Map();
+    safeProducts.forEach(p => {
+      if (!p) return;
+      map.set(String(p.name), p);
+    });
+    return map;
+  }, [safeProducts]);
+
+  const stockAdjustmentByKey = useMemo(() => {
+    const map = new Map();
+    if (!asOfDate) return map;
+
+    // 出库（已发货）在 asOfDate 之后：asOf 时刻的库存应该更高
+    safeStockOut.forEach(o => {
+      if (!o) return;
+      if (String(o.status) !== '已发货') return;
+      if (String(o.date || '') <= asOfDate) return;
+
+      const warehouse = String(o.warehouse);
+      const items = Array.isArray(o.items) ? o.items : [];
+      items.forEach(i => {
+        if (!i) return;
+        const product = String(i.product);
+        if (!product) return;
+        const qty = Number(i.qty) || 0;
+        if (!qty) return;
+        const key = `${warehouse}|${product}`;
+        map.set(key, (map.get(key) || 0) + qty);
+      });
+    });
+
+    // 入库（已审核）在 asOfDate 之后：asOf 时刻的库存应该更低
+    safeStockIn.forEach(o => {
+      if (!o) return;
+      if (String(o.status) !== '已审核') return;
+      if (String(o.date || '') <= asOfDate) return;
+
+      const warehouse = String(o.warehouse);
+      const items = Array.isArray(o.items) ? o.items : [];
+      items.forEach(i => {
+        if (!i) return;
+        const product = String(i.product);
+        if (!product) return;
+        const qty = Number(i.qty) || 0;
+        if (!qty) return;
+        const key = `${warehouse}|${product}`;
+        map.set(key, (map.get(key) || 0) - qty);
+      });
+    });
+
+    return map;
+  }, [safeStockIn, safeStockOut, asOfDate]);
+
+  const enriched = useMemo(() => {
+    return safeInventory
+      .map(item => {
+        if (!item) return null;
+
+        const baseStock = Number(item.currentStock) || 0;
+        const key = `${String(item.warehouse)}|${String(item.name)}`;
+        const stock = asOfDate ? baseStock + (stockAdjustmentByKey.get(key) || 0) : baseStock;
+
+        const prodInfo =
+          productInfoByName.get(String(item.name)) || { category: '-', price: 0, code: '-', spec: '-' };
+
+        return {
+          ...item,
+          code: String(item.code || prodInfo.code || '-'),
+          spec: String(item.spec || prodInfo.spec || '-'),
+          category: String(prodInfo.category || '-'),
+          unitPrice: Number(prodInfo.price) || 0,
+          currentStock: stock,
+          totalValue: stock * (Number(prodInfo.price) || 0),
+          status: asOfDate ? '历史快照' : String(item.status || ''),
+        };
+      })
+      .filter(Boolean);
+  }, [safeInventory, productInfoByName, stockAdjustmentByKey, asOfDate]);
 
   const filtered = useMemo(() => {
-    const getStockAsOf = (item, date) => {
-      let stock = Number(item?.currentStock) || 0;
-      
-      safeStockOut.forEach(o => { 
-        if (o && String(o.status) === '已发货' && String(o.date || '') > date && String(o.warehouse) === String(item?.warehouse)) {
-          const items = Array.isArray(o.items) ? o.items : [];
-          items.forEach(i => { if (i && String(i.product) === String(item?.name)) stock += (Number(i.qty) || 0); });
-        }
-      });
-      
-      safeStockIn.forEach(o => { 
-        if (o && String(o.status) === '已审核' && String(o.date || '') > date && String(o.warehouse) === String(item?.warehouse)) {
-          const items = Array.isArray(o.items) ? o.items : [];
-          items.forEach(i => { if (i && String(i.product) === String(item?.name)) stock -= (Number(i.qty) || 0); });
-        }
-      });
-      return stock;
-    };
-    
-    const list = safeInventory.map(item => {
-      if (!item) return null;
-      const stock = asOfDate ? getStockAsOf(item, asOfDate) : (Number(item.currentStock) || 0);
-      const prodInfo = safeProducts.find(p => p && String(p.name) === String(item.name)) || { category: '-', price: 0, code: '-', spec: '-' };
-      return { 
-        ...item, 
-        code: String(item.code || prodInfo.code || '-'), 
-        spec: String(item.spec || prodInfo.spec || '-'), 
-        category: String(prodInfo.category || '-'), 
-        unitPrice: Number(prodInfo.price) || 0, 
-        currentStock: stock, 
-        totalValue: stock * (Number(prodInfo.price) || 0), 
-        status: asOfDate ? '历史快照' : String(item.status || '') 
-      };
-    }).filter(Boolean);
-    
-    return list.filter(i => {
-      const s = String(search || '').toLowerCase();
-      return String(i.name).toLowerCase().includes(s) || 
-             String(i.code).toLowerCase().includes(s) || 
-             String(i.warehouse).toLowerCase().includes(s);
+    const s = String(search || '').toLowerCase();
+    return enriched.filter(i => {
+      return (
+        String(i.name).toLowerCase().includes(s) ||
+        String(i.code).toLowerCase().includes(s) ||
+        String(i.warehouse).toLowerCase().includes(s)
+      );
     });
-  }, [safeInventory, safeProducts, safeStockIn, safeStockOut, asOfDate, search]);
+  }, [enriched, search]);
 
   const safeFiltered = Array.isArray(filtered) ? filtered : [];
   const filteredLength = safeFiltered.length || 0;

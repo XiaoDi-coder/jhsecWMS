@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useContext } from 'react';
-import { Plus, Edit, Trash2, Upload, Download, Database, X, FileText, CheckCircle2 } from 'lucide-react';
+import { useState, useMemo, useContext } from 'react';
+import { Plus, Edit, Trash2, Upload, Database, X, FileText, CheckCircle2 } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
-import { exportToCSV } from '../utils';
+import { exportToCSV, createId } from '../utils';
 
 export const SimpleCrudPage = ({ title, data, setData, fields, displayColumns, defaultValues = {} }) => {
   const { showConfirm, showMessage, addLog } = useContext(AppContext);
@@ -51,7 +51,7 @@ export const SimpleCrudPage = ({ title, data, setData, fields, displayColumns, d
       addLog(title, '编辑修改', `修改了记录: ${formData[fields[0].name]}`);
       showMessage('保存成功', '数据已更新');
     } else {
-      setData([{ id: Date.now(), status: '启用', ...defaultValues, ...formData }, ...data]);
+      setData([{ id: createId(), status: '启用', ...defaultValues, ...formData }, ...data]);
       addLog(title, '新建数据', `新增了配置: ${formData[fields[0].name]}`);
       showMessage('创建成功', '新数据已入库');
     }
@@ -74,10 +74,12 @@ export const SimpleCrudPage = ({ title, data, setData, fields, displayColumns, d
     setIsImportModalOpen(false);
     showMessage('数据解析中', `正在智能读取 ${file.name} 中的数据行...`);
     setTimeout(() => {
-      const mockCount = Math.floor(Math.random() * 5) + 3;
+      const baseId = createId();
+      const mockCount = (baseId % 5) + 3;
+      const batchSuffix = String(baseId).slice(-4);
       const newItems = Array.from({length: mockCount}).map((_, i) => ({
-        id: Date.now() + i, status: '启用', ...defaultValues,
-        [fields[0].name]: `IMP${Date.now().toString().slice(-4)}${i}`,
+        id: baseId + i, status: '启用', ...defaultValues,
+        [fields[0].name]: `IMP${batchSuffix}${i}`,
         [fields[1].name]: `批量导入 ${i+1}`
       }));
       setData(prev => [...newItems, ...prev]);

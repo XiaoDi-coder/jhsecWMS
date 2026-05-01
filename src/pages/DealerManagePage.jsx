@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useContext } from 'react';
+import { useState, useMemo, useContext } from 'react';
 import { Plus, Edit, Trash2, FileText, Truck, Calculator,PackageSearch } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { PageHeader, Pagination, EmptyState, SearchBar } from '../components/common';
-import { getLocalDate } from '../utils';
+import { getLocalDate, createId } from '../utils';
 
 export const DealerManagePage = () => {
   const { dealerRecords, setDealerRecords, showConfirm, setActiveTab, setEditingRecord } = useContext(AppContext);
@@ -121,7 +121,7 @@ export const DealerManageCreatePage = () => {
   const [dealer, setDealer] = useState(editingRecord ? editingRecord.dealer : '经销商A');
   const [date, setDate] = useState(editingRecord ? editingRecord.date : getLocalDate());
   const [remark, setRemark] = useState(editingRecord ? editingRecord.remark : '');
-  const [items, setItems] = useState(editingRecord ? [{ id: editingRecord.id, product: editingRecord.productName, qty: editingRecord.qty, price: editingRecord.price }] : [{ id: Date.now() + Math.random(), product: products[0]?.name || '', qty: 1, price: products[0]?.price || 0 }]);
+  const [items, setItems] = useState(() => (editingRecord ? [{ id: editingRecord.id, product: editingRecord.productName, qty: editingRecord.qty, price: editingRecord.price }] : [{ id: createId(), product: products[0]?.name || '', qty: 1, price: products[0]?.price || 0 }]));
   
   const total = items.reduce((sum, item) => sum + (Number(item.qty) * Number(item.price)), 0);
 
@@ -133,7 +133,7 @@ export const DealerManageCreatePage = () => {
 
     const newRecords = items.map(item => {
        const pInfo = products.find(p => p.name === item.product) || { code: '-', spec: '-' };
-       return { id: editingRecord ? editingRecord.id : Date.now() + Math.random(), dealer, date, remark, productCode: pInfo.code, productName: item.product, spec: pInfo.spec, qty: item.qty, price: Number(item.price).toFixed(2), operator: 'admin' };
+       return { id: editingRecord ? editingRecord.id : createId(), dealer, date, remark, productCode: pInfo.code, productName: item.product, spec: pInfo.spec, qty: item.qty, price: Number(item.price).toFixed(2), operator: 'admin' };
     });
 
     if (editingRecord) setDealerRecords(prev => [...newRecords, ...prev.filter(r => r.id !== editingRecord.id)]);
@@ -161,7 +161,7 @@ export const DealerManageCreatePage = () => {
       <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-100 shadow-sm flex-1">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-base font-bold flex items-center gap-2 text-slate-800"><Truck size={18} className="text-emerald-500" /> 下发资产明细</h3>
-          {!editingRecord && <button onClick={() => setItems([...items, { id: Date.now() + Math.random(), product: products[0]?.name||'', qty: 1, price: products[0]?.price||0 }])} className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-sm font-bold flex gap-1.5 hover:bg-emerald-100 transition-colors"><Plus size={16}/> 增加一行</button>}
+          {!editingRecord && <button onClick={() => setItems([...items, { id: createId(), product: products[0]?.name||'', qty: 1, price: products[0]?.price||0 }])} className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-sm font-bold flex gap-1.5 hover:bg-emerald-100 transition-colors"><Plus size={16}/> 增加一行</button>}
         </div>
         <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm"><table className="w-full text-sm text-left whitespace-nowrap"><thead className="bg-slate-50 border-b"><tr><th className="p-4 font-medium text-slate-600 min-w-[200px]">调拨物资</th><th className="p-4 font-medium text-slate-600 w-32">下发数量</th><th className="p-4 font-medium text-slate-600 w-32">核定单价</th><th className="p-4 font-medium text-slate-600 w-32">估值小计</th>{!editingRecord && <th className="p-4 font-medium text-slate-600 w-20 sticky right-0 bg-slate-50">操作</th>}</tr></thead><tbody>
           {items.map((item, idx) => (
