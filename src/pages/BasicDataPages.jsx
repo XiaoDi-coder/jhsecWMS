@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import { SimpleCrudPage } from './SimpleCrudPage';
+import request from '../utils/request';
 
 // ==========================================
 // 1. 商品管理
@@ -23,6 +24,33 @@ export const ProductsPage = () => {
     { name: 'status', label: '上架状态', type: 'select', options: ['上架', '下架'] }
   ];
   
+  const productPersist = {
+    create: async (formData) => {
+      const resp = await request.post('/products', {
+        product_code: formData.code,
+        product_name: formData.name,
+        category: formData.category,
+        unit: formData.unit,
+        standard_price: Number(formData.price || 0),
+      });
+      return {
+        id: resp?.data?.id,
+        ...formData,
+      };
+    },
+    update: async (oldItem, formData) => {
+      await request.put(`/products/${oldItem.id}`, {
+        product_name: formData.name,
+        category: formData.category,
+        unit: formData.unit,
+        standard_price: Number(formData.price || 0),
+      });
+    },
+    remove: async (item) => {
+      await request.delete(`/products/${item.id}`);
+    },
+  };
+
   return (
     <SimpleCrudPage 
       title="商品物资库" 
@@ -35,6 +63,7 @@ export const ProductsPage = () => {
         {key:'status', label:'状态'}
       ]} 
       defaultValues={{ status: '上架', unit: units[0], category: categories[0] }} 
+      persist={productPersist}
     />
   );
 };
@@ -52,6 +81,27 @@ export const CustomersPage = () => {
     { name: 'level', label: '客户等级', type: 'select', options: ['普通客户', 'VIP客户', '战略合作伙伴'] },
     { name: 'status', label: '合作状态', type: 'select', options: ['启用', '禁用'] }
   ];
+  const customerPersist = {
+    create: async (formData) => {
+      const code = `CUS${Date.now()}`;
+      const resp = await request.post('/partners', {
+        partner_code: code,
+        partner_name: formData.name,
+        partner_type: 'CUSTOMER',
+        contact_person: formData.contact,
+        contact_phone: formData.phone,
+      });
+      return { id: resp?.data?.id, ...formData };
+    },
+    update: async () => {
+      // 当前后端未提供 partner 更新接口，前端先本地更新保持体验一致
+      return Promise.resolve();
+    },
+    remove: async (item) => {
+      await request.delete(`/partners/${item.id}`);
+    },
+  };
+
   return (
     <SimpleCrudPage 
       title="合作客户名录" 
@@ -64,6 +114,7 @@ export const CustomersPage = () => {
         {key:'status', label:'状态'}
       ]} 
       defaultValues={{ status: '启用', level: '普通客户' }} 
+      persist={customerPersist}
     />
   );
 };
@@ -80,6 +131,24 @@ export const SuppliersPage = () => {
     { name: 'bankAccount', label: '收款银行账号' },
     { name: 'status', label: '合作状态', type: 'select', options: ['启用', '禁用'] }
   ];
+  const supplierPersist = {
+    create: async (formData) => {
+      const code = `SUP${Date.now()}`;
+      const resp = await request.post('/partners', {
+        partner_code: code,
+        partner_name: formData.name,
+        partner_type: 'SUPPLIER',
+        contact_person: formData.contact,
+        contact_phone: formData.phone,
+      });
+      return { id: resp?.data?.id, ...formData };
+    },
+    update: async () => Promise.resolve(),
+    remove: async (item) => {
+      await request.delete(`/partners/${item.id}`);
+    },
+  };
+
   return (
     <SimpleCrudPage 
       title="供应商名录" 
@@ -91,6 +160,7 @@ export const SuppliersPage = () => {
         {key:'phone', label:'联系电话'}, {key:'status', label:'状态'}
       ]} 
       defaultValues={{ status: '启用' }} 
+      persist={supplierPersist}
     />
   );
 };
@@ -109,6 +179,24 @@ export const WarehousesPage = () => {
     { name: 'status', label: '运营状态', type: 'select', options: ['正常运营', '停用维护'] }
   ];
 
+  const warehousePersist = {
+    create: async (formData) => {
+      const resp = await request.post('/warehouses', {
+        warehouse_code: formData.code,
+        warehouse_name: formData.name,
+        location: formData.location,
+      });
+      return { id: resp?.data?.id, ...formData };
+    },
+    update: async (oldItem, formData) => {
+      await request.put(`/warehouses/${oldItem.id}`, {
+        warehouse_name: formData.name,
+        location: formData.location,
+        status: formData.status === '停用维护' ? 0 : 1,
+      });
+    },
+  };
+
   return (
     <SimpleCrudPage 
       title="仓库配置" 
@@ -121,6 +209,7 @@ export const WarehousesPage = () => {
         {key:'status', label:'状态'}
       ]} 
       defaultValues={{ status: '正常运营', type: '中心主仓' }} 
+      persist={warehousePersist}
     />
   );
 };

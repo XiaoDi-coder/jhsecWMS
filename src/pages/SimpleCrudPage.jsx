@@ -4,7 +4,7 @@ import { AppContext } from '../context/AppContext';
 import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
 import { exportToCSV, createId } from '../utils';
 
-export const SimpleCrudPage = ({ title, data, setData, fields, displayColumns, defaultValues = {} }) => {
+export const SimpleCrudPage = ({ title, data, setData, fields, displayColumns, defaultValues = {}, persist }) => {
   const { showConfirm, showMessage, addLog } = useContext(AppContext);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -42,25 +42,48 @@ export const SimpleCrudPage = ({ title, data, setData, fields, displayColumns, d
   };
 
   // 抽屉表单提交
-  const handleDrawerSubmit = () => {
+  const handleDrawerSubmit = async () => {
     const err = validateForm(formData);
     if (err) return showMessage('校验拦截', err);
 
-    if (editingItem) {
+    try {
+      if (editingItem) {
+      if (persist?.update) {
+        await persist.update(editingItem, formData);
+      }
       setData(data.map(d => d.id === editingItem.id ? { ...d, ...formData } : d));
       addLog(title, '编辑修改', `修改了记录: ${formData[fields[0].name]}`);
       showMessage('保存成功', '数据已更新');
-    } else {
-      setData([{ id: createId(), status: '启用', ...defaultValues, ...formData }, ...data]);
+      } else {
+      if (persist?.create) {
+        const created = await persist.create(formData);
+        if (created) {
+          setData([created, ...data]);
+        } else {
+          setData([{ id: createId(), status: '启用', ...defaultValues, ...formData }, ...data]);
+        }
+      } else {
+        setData([{ id: createId(), status: '启用', ...defaultValues, ...formData }, ...data]);
+      }
       addLog(title, '新建数据', `新增了配置: ${formData[fields[0].name]}`);
       showMessage('创建成功', '新数据已入库');
+      }
+      setIsDrawerOpen(false);
+    } catch (error) {
+      showMessage('保存失败', error?.response?.data?.message || '请求失败，请重试');
     }
-    setIsDrawerOpen(false);
   };
 
-  const handleDelete = (item) => showConfirm('删除', '确定要彻底删除这条数据吗？操作不可逆。', () => {
-    setData(data.filter(d=>d.id!==item.id));
-    addLog(title, '删除数据', `删除了记录: ${item[fields[0].name]}`);
+  const handleDelete = (item) => showConfirm('删除', '确定要彻底删除这条数据吗？操作不可逆。', async () => {
+    try {
+      if (persist?.remove) {
+        await persist.remove(item);
+      }
+      setData(data.filter(d=>d.id!==item.id));
+      addLog(title, '删除数据', `删除了记录: ${item[fields[0].name]}`);
+    } catch (error) {
+      showMessage('删除失败', error?.response?.data?.message || '请求失败，请重试');
+    }
   });
 
   const handleDownloadTemplate = () => {

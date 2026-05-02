@@ -3,23 +3,42 @@ import { ArrowLeft } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { Badge } from '../components/common';
 import myLogo from '../assets/logo.png';
+import request from '../utils/request';
 
 export const LoginPage = () => {
-  const { users, setIsAuthenticated, setCurrentUser, addLog } = useContext(AppContext);
+  const { setIsAuthenticated, setCurrentUser, addLog, loadBackendMasterData } = useContext(AppContext);
   const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('123');
+  const [password, setPassword] = useState('123456');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const user = users.find(u => u.username === username && u.password === password);
-    if (user) {
-      if (user.status === '禁用') return setError('该账号已被禁用，请联系管理员！');
-      setCurrentUser(user);
+    setError('');
+    setLoading(true);
+    try {
+      const res = await request.post('/auth/login', { username, password });
+      const user = res?.data?.user;
+      const token = res?.data?.token;
+      if (!user || !token) throw new Error('登录返回数据不完整');
+
+      localStorage.setItem('wms_token', token);
+      localStorage.setItem('wms_user', JSON.stringify(user));
+
+      setCurrentUser({
+        id: user.id,
+        username: user.username,
+        realName: user.realName,
+        role: user.roleName || '超级管理员',
+        status: '启用',
+      });
       setIsAuthenticated(true);
       addLog('安全网关', '用户登录', `用户 ${user.realName} 成功登录系统`);
-    } else {
-      setError('用户名或密码错误！');
+      await loadBackendMasterData();
+    } catch (err) {
+      setError(err?.response?.data?.message || '登录失败，请检查账号密码或后端服务状态');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -35,7 +54,7 @@ export const LoginPage = () => {
         <form onSubmit={handleLogin} className="space-y-5">
           <div><label className="block text-sm font-medium mb-2 text-slate-700">账号</label><input type="text" value={username} onChange={e=>setUsername(e.target.value)} className="w-full border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-slate-50 focus:bg-white transition-all" required/></div>
           <div><label className="block text-sm font-medium mb-2 text-slate-700">密码</label><input type="password" value={password} onChange={e=>setPassword(e.target.value)} className="w-full border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-slate-50 focus:bg-white transition-all" required/></div>
-          <button type="submit" className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20 mt-2">安全登录</button>
+          <button disabled={loading} type="submit" className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20 mt-2 disabled:opacity-60 disabled:cursor-not-allowed">{loading ? '登录中...' : '安全登录'}</button>
         </form>
       </div>
     </div>

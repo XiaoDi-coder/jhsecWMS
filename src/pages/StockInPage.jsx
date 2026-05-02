@@ -3,6 +3,7 @@ import { Plus, Eye, Check, Trash2, FileText, PackageSearch, Calculator } from 'l
 import { AppContext } from '../context/AppContext';
 import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
 import { getLocalDate, createId, createOrderNo } from '../utils';
+import request from '../utils/request';
 
 export const StockInPage = () => {
   const { stockIn, setStockIn, showConfirm, showMessage, setActiveTab, setCurrentDetail, setInventory, setPayables, addLog, products, systemDict } = useContext(AppContext);
@@ -82,13 +83,13 @@ export const StockInPage = () => {
 };
 
 export const StockInCreatePage = () => {
-  const { setStockIn, setActiveTab, showMessage, suppliers, products, addLog, systemDict } = useContext(AppContext);
+  const { setActiveTab, showMessage, suppliers, products, addLog, systemDict, warehouses, loadBackendMasterData } = useContext(AppContext);
   const [items, setItems] = useState(() => [{ id: createId(), product: products[0]?.name || '', qty: 1, price: products[0]?.price || 0 }]);
   const [supplier, setSupplier] = useState(suppliers[0]?.name || ''); const [warehouse, setWarehouse] = useState(systemDict.warehouses[0]);
   const [type, setType] = useState('采购入库'); const [remark, setRemark] = useState(''); const [date, setDate] = useState(getLocalDate());
   const total = items.reduce((sum, item) => sum + (Number(item.qty) * Number(item.price)), 0);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if(!items.length) return showMessage('错误', '请添加商品！');
     if(!supplier) return showMessage('错误', '请选择供应商！');
     if(items.some(i => Number(i.qty) <= 0)) return showMessage('数据防爆拦截', '入库商品数量必须大于 0 ！');
@@ -96,9 +97,35 @@ export const StockInCreatePage = () => {
     if (uniqueProducts.size !== items.length) return showMessage('排重拦截', '同一张单据内禁止分多行录入同款商品，请合并数量！');
 
     const orderNo = createOrderNo('RK');
-    setStockIn(prev => [{ id: createId(), orderNo, type, warehouse, supplier, date, amount: total.toFixed(2), status: '待审核', operator: 'admin', items, remark }, ...prev]);
-    addLog('入库管理', '新建单据', `已创建草稿入库单: ${orderNo}`);
-    setActiveTab('stock-in');
+    const supplierRecord = suppliers.find((s) => s.name === supplier);
+    const warehouseRecord = warehouses.find((w) => w.name === warehouse);
+    if (!supplierRecord?.id || !warehouseRecord?.id) {
+      return showMessage('错误', '供应商或仓库未同步到后端，请刷新后重试');
+    }
+    const hasUnknownProduct = items.some((it) => !products.find((p) => p.name === it.product)?.id);
+    if (hasUnknownProduct) return showMessage('错误', '存在未同步商品，请刷新后重试');
+
+    try {
+      await request.post('/stock-in', {
+        stock_in_no: orderNo,
+        warehouse_id: warehouseRecord.id,
+        source_type: type,
+        supplier_id: supplierRecord.id,
+        items: items.map((it) => {
+          const prod = products.find((p) => p.name === it.product);
+          return {
+            product_id: prod?.id,
+            quantity: Number(it.qty),
+            unit_price: Number(it.price),
+          };
+        }),
+      });
+      await loadBackendMasterData();
+      addLog('入库管理', '新建单据', `已创建入库单: ${orderNo}`);
+      setActiveTab('stock-in');
+    } catch (error) {
+      showMessage('创建失败', error?.response?.data?.message || '后端请求失败');
+    }
   };
 
   const inputClass = "w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all hover:border-slate-300";

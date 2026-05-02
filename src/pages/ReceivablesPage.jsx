@@ -1,33 +1,156 @@
 import { useState, useMemo, useContext } from 'react';
-import { Eye, Edit, CreditCard, Check } from 'lucide-react';
+import { Eye, Edit, CreditCard, Check, History } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
 import { getLocalDate } from '../utils';
+import request from '../utils/request';
 
 export const ReceivablesPage = () => {
-  const { receivables, setReceivables, showForm, showMessage, setCurrentDetail, setActiveTab, addLog } = useContext(AppContext);
-  const [tab, setTab] = useState('全部'); const [search, setSearch] = useState('');
+  const { receivables, setReceivables, showForm, showMessage, setCurrentDetail, setActiveTab, addLog, loadBackendMasterData } = useContext(AppContext);
+  const [tab, setTab] = useState('全部');
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => receivables.filter(i => (tab === '全部' || i.status === tab) && (i.orderNo.includes(search) || i.customer.includes(search))), [receivables, tab, search]);
   const safePage = Math.max(1, Math.min(page, Math.ceil(filtered.length / 10) || 1));
   const paginated = filtered.slice((safePage - 1) * 10, safePage * 10);
 
-  const handlePayment = (item) => {
-    showForm('登记收款', [{ name: 'amount', label: `本次收款 (最多: ¥${item.unreceivedAmount})`, type: 'number' }, { name: 'voucherNo', label: '凭证号' }, { name: 'date', label: '收款日期', type: 'date' }], { date: getLocalDate() }, (form) => {
+  const handlePayment = async (item) => {
+    showForm('登记收款', [
+      { name: 'amount', label: `本次收款 (最多: ¥${item.unreceivedAmount})`, type: 'number' },
+      { name: 'paymentNo', label: '支付单号', required: true },
+      { name: 'paymentMethod', label: '支付方式', type: 'select', options: ['CASH', 'BANK_TRANSFER', 'ALIPAY', 'WECHAT', 'OTHER'], required: true },
+      { name: 'date', label: '收款日期', type: 'date', required: true },
+      { name: 'remark', label: '备注', type: 'textarea' }
+    ], { date: getLocalDate(), paymentMethod: 'CASH' }, async (form) => {
       const pAmt = parseFloat(form.amount);
-      if (isNaN(pAmt) || pAmt <= 0 || pAmt > parseFloat(item.unreceivedAmount)) return showMessage('错误', '金额不合法或超出应收总额！');
-      const unrec = (parseFloat(item.totalAmount) - (parseFloat(item.receivedAmount) + pAmt)).toFixed(2);
-      setReceivables(receivables.map(r => r.id === item.id ? { ...r, receivedAmount: (parseFloat(item.receivedAmount) + pAmt).toFixed(2), unreceivedAmount: unrec, status: Number(unrec) <= 0 ? '已结清' : '部分结清', payments: [...(r.payments||[]), { date: form.date, amount: pAmt.toFixed(2), voucherNo: form.voucherNo }] } : r));
-      addLog('应收管理', '登记收款', `单号: ${item.orderNo}, 金额: ¥${pAmt.toFixed(2)}`);
+      if (isNaN(pAmt) || pAmt <= 0 || pAmt > parseFloat(item.unreceivedAmount)) {
+        showMessage('错误', '金额不合法或超出应收总额！');
+        return false;
+      }
+
+      try {
+        const backendId = item.backendId || item.id;
+        await request.post(`/finance/${backendId}/payment`, {
+          payment_no: form.paymentNo,
+          payment_amount: pAmt,
+          payment_method: form.paymentMethod,
+          payment_date: form.date,
+          remark: form.remark
+        });
+
+        await loadBackendMasterData();
+        addLog('应收管理', '登记收款', `单号: ${item.orderNo}, 金额: ¥${pAmt.toFixed(2)}`);
+        showMessage('成功', '收款登记成功');
+      } catch (error) {
+        showMessage('登记失败', error?.response?.data?.message || '后端请求失败');
+        return false;
+      }
     });
   };
 
-  const handleEdit = (item) => {
-    showForm('编辑应收记录', [{ name: 'date', label: '发生日期', type: 'date' }, { name: 'customer', label: '客户名称' }], item, (formData) => {
-      if (!formData.date || !formData.customer) return showMessage('警告', '必填项不能为空');
-      setReceivables(receivables.map(r => r.id === item.id ? { ...r, ...formData } : r));
-      addLog('应收管理', '修改记录', `单号: ${item.orderNo}`);
+  const handleEdit = async (item) => {
+    // 先根据客户名称查找客户ID
+    const customerData = receivables.find(r => r.id === item.id);
+    const customerId = customerData?.backendId || item.id;
+
+    // 显示表单，允许编辑客户名称和关联订单号
+    showForm('编辑应收记录', [
+      { name: 'customerName', label: '客户名称', type: 'text', required: true, value: customerData?.customer || item.customer },
+      { name: 'relatedOrderNo', label: '关联订单号', value: item.orderNo || '' }
+    ], {}, async (formData) => {
+      if (!formData.customerName) {
+        showMessage('警告', '客户名称不能为空');
+        return false;
+      }
+
+      try {
+        // 这里需要先查找客户ID
+        const response = await request.get(`/api/partners?keyword=${encodeURIComponent(formData.customerName)}`);
+        const partners = response.data.list;
+        let partnerId = null;
+
+        if (partners.length > 0) {
+          partnerId = partners[0].id;
+        } else {
+          // 如果客户不存在，需要先创建客户
+          const createResponse = await request.post('/api/partners', {
+            partner_code: `CUST-${Date.now()}`,
+            partner_name: formData.customerName,
+            partner_type: 'CUSTOMER'
+          });
+          partnerId = createResponse.data.id;
+        }
+
+        const backendId = item.backendId || item.id;
+        await request.put(`/finance/${backendId}`, {
+          partner_id: partnerId,
+          related_order_no: formData.relatedOrderNo
+        });
+
+        // 更新本地状态
+        setReceivables(receivables.map(r =>
+          r.id === item.id
+            ? { ...r, customer: formData.customerName, orderNo: formData.relatedOrderNo }
+            : r
+        ));
+
+        addLog('应收管理', '修改记录', `单号: ${item.orderNo}`);
+        showMessage('成功', '应收记录修改成功');
+      } catch (error) {
+        showMessage('修改失败', error?.response?.data?.message || '后端请求失败');
+        return false;
+      }
+    });
+  };
+
+  const handleViewPayments = (item) => {
+    setCurrentDetail({
+      title: '收款记录',
+      content: async () => {
+        const backendId = item.backendId || item.id;
+        const response = await request.get(`/finance/${backendId}/payments`);
+        const { payment_records, transaction_info } = response.data;
+
+        return (
+          <div className="p-4">
+            <div className="bg-slate-50 rounded-lg p-4 mb-4">
+              <h3 className="font-medium mb-2">交易信息</h3>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>财务单号: {transaction_info.transaction_no}</div>
+                <div>总金额: ¥{transaction_info.amount}</div>
+                <div>已收金额: ¥{transaction_info.paid_amount}</div>
+                <div>剩余金额: ¥{transaction_info.remaining_amount}</div>
+                <div>状态: <Badge text={transaction_info.status}/></div>
+              </div>
+            </div>
+
+            <h3 className="font-medium mb-3">收款记录 ({payment_records.length})</h3>
+            {payment_records.length > 0 ? (
+              <div className="space-y-2">
+                {payment_records.map(record => (
+                  <div key={record.id} className="border rounded-lg p-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-medium">{record.payment_no}</div>
+                        <div className="text-sm text-slate-500">
+                          {record.payment_date} · {record.payment_method}
+                        </div>
+                      </div>
+                      <div className="text-lg font-bold text-green-600">¥{record.payment_amount}</div>
+                    </div>
+                    {record.remark && (
+                      <div className="text-sm text-slate-600 mt-2">{record.remark}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState message="暂无收款记录" />
+            )}
+          </div>
+        );
+      }
     });
   };
 
@@ -42,6 +165,10 @@ export const ReceivablesPage = () => {
             <tr key={i.id || idx} className="group hover:bg-slate-50 border-b border-slate-100"><td className="p-4 text-blue-600 font-bold">{i.orderNo}</td><td className="p-4 font-medium">{i.customer}</td><td className="p-4">¥{i.totalAmount}</td><td className="p-4 text-rose-500 font-bold">¥{i.unreceivedAmount}</td><td className="p-4"><Badge text={i.status}/></td>
             <td className="p-4 sticky right-0 bg-white group-hover:bg-slate-50 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)] w-1 whitespace-nowrap">
               <div className="flex items-center gap-4">
+                <button onClick={()=>handleViewPayments(i)} className="text-blue-600 font-medium flex items-center gap-1.5">
+                  <History size={16}/>
+                  收款记录
+                </button>
                 <button onClick={()=>{setCurrentDetail({type:'receivable',data:i});setActiveTab('order-detail');}} className="text-blue-600 font-medium flex items-center gap-1.5"><Eye size={16}/>详情</button>
                 <button onClick={()=>handleEdit(i)} className="text-blue-600 font-medium flex items-center gap-1.5"><Edit size={16}/>编辑</button>
                 {i.status!=='已结清' ? <button onClick={()=>handlePayment(i)} className="text-blue-600 font-medium flex gap-1.5 items-center"><CreditCard size={16}/>登记</button> : <span className="text-slate-400 flex items-center"><Check size={16}/>结清</span>}

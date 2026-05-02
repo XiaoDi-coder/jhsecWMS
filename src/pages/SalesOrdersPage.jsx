@@ -3,6 +3,7 @@ import { Plus, Eye, Edit, Check, Trash2, FileText, ShoppingBag, Calculator } fro
 import { AppContext } from '../context/AppContext';
 import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
 import { getLocalDate, createId, createOrderNo } from '../utils';
+import request from '../utils/request';
 
 export const SalesOrdersPage = () => {
   const { salesOrders, setSalesOrders, setActiveTab, showConfirm, showMessage, setCurrentDetail, setReceivables, setEditingRecord, addLog } = useContext(AppContext);
@@ -74,7 +75,7 @@ export const SalesOrdersPage = () => {
 };
 
 export const SalesOrderCreatePage = () => {
-  const { setSalesOrders, setActiveTab, showMessage, editingRecord, setEditingRecord, products, addLog } = useContext(AppContext);
+  const { setSalesOrders, setActiveTab, showMessage, editingRecord, setEditingRecord, products, addLog, customers, loadBackendMasterData } = useContext(AppContext);
   const [items, setItems] = useState(() => editingRecord
     ? editingRecord.items.map(i => ({...i, id: i.id || createId()}))
     : [{ id: createId(), product: products[0]?.name||'', qty: 1, price: products[0]?.price||0 }]
@@ -84,7 +85,7 @@ export const SalesOrderCreatePage = () => {
   const [date, setDate] = useState(editingRecord ? editingRecord.date : getLocalDate());
   const total = items.reduce((sum, item) => sum + (Number(item.qty) * Number(item.price)), 0);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if(!items.length) return showMessage('错误', '请至少添加一件商品！');
     if(items.some(i => Number(i.qty) <= 0)) return showMessage('数据防爆拦截', '数量必须大于 0 ！');
     const uniqueProducts = new Set(items.map(i => i.product));
@@ -100,8 +101,29 @@ export const SalesOrderCreatePage = () => {
       if (isModifying) showMessage('成功', '修改申请已提交，等待主管审批！');
       addLog('销售订单', '编辑修改', `修改了单据: ${orderNo}`);
     } else {
-      setSalesOrders(prev => [{ id: createId(), ...orderData }, ...prev]);
-      addLog('销售订单', '新建单据', `创建了草稿: ${orderNo}`);
+      const customerRecord = customers.find((c) => c.name === customer);
+      if (!customerRecord?.id) return showMessage('错误', '客户未同步到后端，请刷新后重试');
+      const hasUnknownProduct = items.some((it) => !products.find((p) => p.name === it.product)?.id);
+      if (hasUnknownProduct) return showMessage('错误', '存在未同步商品，请刷新后重试');
+
+      try {
+        await request.post('/sales-orders', {
+          order_no: orderNo,
+          customer_id: customerRecord.id,
+          items: items.map((it) => {
+            const prod = products.find((p) => p.name === it.product);
+            return {
+              product_id: prod?.id,
+              quantity: Number(it.qty),
+              unit_price: Number(it.price),
+            };
+          }),
+        });
+        await loadBackendMasterData();
+        addLog('销售订单', '新建单据', `创建了订单: ${orderNo}`);
+      } catch (error) {
+        return showMessage('创建失败', error?.response?.data?.message || '后端请求失败');
+      }
     }
     setEditingRecord(null); setActiveTab('sales-orders');
   };
@@ -122,7 +144,7 @@ export const SalesOrderCreatePage = () => {
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div><label className="block text-sm font-semibold text-slate-700 mb-1.5">订单日期</label><input type="date" value={date} onChange={e=>setDate(e.target.value)} className={inputClass} /></div>
-          <div><label className="block text-sm font-semibold text-slate-700 mb-1.5">签约客户</label><select value={customer} onChange={e=>setCustomer(e.target.value)} className={inputClass}><option>客户 A</option><option>客户 B</option></select></div>
+          <div><label className="block text-sm font-semibold text-slate-700 mb-1.5">签约客户</label><select value={customer} onChange={e=>setCustomer(e.target.value)} className={inputClass}>{customers.map(c => <option key={c.id}>{c.name}</option>)}</select></div>
           <div className="lg:col-span-3"><label className="block text-sm font-semibold text-slate-700 mb-1.5">订单备注</label><input value={remark} onChange={e=>setRemark(e.target.value)} className={inputClass} placeholder="记录客户特殊要求..." /></div>
         </div>
       </div>

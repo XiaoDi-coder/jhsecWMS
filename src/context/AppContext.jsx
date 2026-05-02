@@ -1,7 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useState, useCallback } from 'react';
+import { createContext, useState, useCallback, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { createId } from '../utils';
+import request from '../utils/request';
 
 export const AppContext = createContext();
 
@@ -71,6 +72,129 @@ export const AppProvider = ({ children }) => {
   const [payables, setPayables] = useLocalStorage('payables', []);
   const [auditLogs, setAuditLogs] = useLocalStorage('auditLogs', []);
 
+  const loadBackendMasterData = useCallback(async () => {
+    try {
+      const [productRes, warehouseRes, customerRes, supplierRes, inventoryRes, stockInRes, stockOutRes, salesRes, receivableRes, payableRes] = await Promise.all([
+        request.get('/products', { params: { page: 1, pageSize: 500 } }),
+        request.get('/warehouses', { params: { page: 1, pageSize: 200 } }),
+        request.get('/partners', { params: { page: 1, pageSize: 500, partner_type: 'CUSTOMER' } }),
+        request.get('/partners', { params: { page: 1, pageSize: 500, partner_type: 'SUPPLIER' } }),
+        request.get('/inventory', { params: { page: 1, pageSize: 1000 } }),
+        request.get('/stock-in', { params: { page: 1, pageSize: 500 } }),
+        request.get('/stock-out', { params: { page: 1, pageSize: 500 } }),
+        request.get('/sales-orders', { params: { page: 1, pageSize: 500 } }),
+        request.get('/finance', { params: { page: 1, pageSize: 500, trans_type: 'RECEIVABLE' } }),
+        request.get('/finance', { params: { page: 1, pageSize: 500, trans_type: 'PAYABLE' } }),
+      ]);
+
+      const productList = (productRes?.data?.list || []).map((p) => ({
+        id: p.id,
+        code: p.product_code,
+        name: p.product_name,
+        spec: p.spec || '-',
+        category: p.category || '未分类',
+        unit: p.unit || '件',
+        price: Number(p.standard_price || 0),
+        status: '上架',
+      }));
+
+      const warehouseList = (warehouseRes?.data?.list || []).map((w) => ({
+        id: w.id,
+        code: w.warehouse_code,
+        name: w.warehouse_name,
+        manager: w.manager || '-',
+        location: w.location || '-',
+        type: w.type || '中心主仓',
+        status: Number(w.status) === 0 ? '停用维护' : '正常运营',
+      }));
+
+      const customerList = (customerRes?.data?.list || []).map((c) => ({
+        id: c.id,
+        name: c.partner_name,
+        contact: c.contact_person || '-',
+        phone: c.contact_phone || '-',
+        address: c.address || '-',
+        level: '普通客户',
+        status: '启用',
+      }));
+
+      const supplierList = (supplierRes?.data?.list || []).map((s) => ({
+        id: s.id,
+        name: s.partner_name,
+        contact: s.contact_person || '-',
+        phone: s.contact_phone || '-',
+        bankAccount: s.bank_account || '-',
+        status: '启用',
+      }));
+
+      const inventoryList = (inventoryRes?.data?.list || []).map((item) => {
+        const stock = Number(item.quantity || 0);
+        return {
+          id: item.inventory_id,
+          code: item.product_code || '-',
+          name: item.product_name || '-',
+          warehouse: item.warehouse_name || '-',
+          currentStock: stock,
+          minStock: 50,
+          status: stock < 50 ? '库存预警' : '正常',
+        };
+      });
+
+      const stockInList = stockInRes?.data?.list || [];
+      const stockOutList = stockOutRes?.data?.list || [];
+      const salesOrderList = (salesRes?.data?.list || []).map((s) => ({
+        id: s.id,
+        orderNo: s.order_no,
+        date: new Date(s.created_at).toISOString().slice(0, 10),
+        customer: s.customer_name || '-',
+        totalAmount: Number(s.total_amount || 0).toFixed(2),
+        status: s.status === 'APPROVED' ? '已审核' : '草稿',
+        items: [],
+      }));
+
+      const receivableList = (receivableRes?.data?.list || []).map((r) => ({
+        id: r.id,
+        orderNo: r.related_order_no || r.transaction_no,
+        customer: r.partner_name || '-',
+        totalAmount: Number(r.amount || 0).toFixed(2),
+        receivedAmount: r.status === 'PAID' ? Number(r.amount || 0).toFixed(2) : '0.00',
+        unreceivedAmount: r.status === 'PAID' ? '0.00' : Number(r.amount || 0).toFixed(2),
+        status: r.status === 'PAID' ? '已结清' : '未结清',
+        date: new Date(r.created_at).toISOString().slice(0, 10),
+        backendId: r.id,
+      }));
+
+      const payableList = (payableRes?.data?.list || []).map((p) => ({
+        id: p.id,
+        orderNo: p.related_order_no || p.transaction_no,
+        supplier: p.partner_name || '-',
+        totalAmount: Number(p.amount || 0).toFixed(2),
+        paidAmount: p.status === 'PAID' ? Number(p.amount || 0).toFixed(2) : '0.00',
+        unpaidAmount: p.status === 'PAID' ? '0.00' : Number(p.amount || 0).toFixed(2),
+        status: p.status === 'PAID' ? '已结清' : '未结清',
+        date: new Date(p.created_at).toISOString().slice(0, 10),
+        backendId: p.id,
+      }));
+
+      setProducts(productList);
+      setWarehouses(warehouseList);
+      setCustomers(customerList);
+      setSuppliers(supplierList);
+      setInventory(inventoryList);
+      setStockIn(stockInList);
+      setStockOut(stockOutList);
+      setSalesOrders(salesOrderList);
+      setReceivables(receivableList);
+      setPayables(payableList);
+      setSystemDict((prev) => ({
+        ...prev,
+        warehouses: warehouseList.map((w) => w.name),
+      }));
+    } catch (error) {
+      console.error('加载后端主数据失败:', error);
+    }
+  }, [setCustomers, setInventory, setPayables, setProducts, setReceivables, setSalesOrders, setStockIn, setStockOut, setSuppliers, setSystemDict, setWarehouses]);
+
   const addLog = useCallback((module, action, details) => {
     const newLog = { id: createId(), timestamp: new Date().toLocaleString('zh-CN', { hour12: false }), user: currentUser?.realName || 'System', module, action, details };
     setAuditLogs(prev => [newLog, ...prev]);
@@ -81,6 +205,13 @@ export const AppProvider = ({ children }) => {
   const showForm = (title, fields, defaultValues, onSubmit) => setFormConfig({ isOpen: true, title, fields, defaultValues, onSubmit });
   const closeModal = () => { setConfirmConfig({ isOpen: false }); setMessageConfig({ isOpen: false }); setFormConfig({ isOpen: false }); };
 
+  useEffect(() => {
+    const token = localStorage.getItem('wms_token');
+    if (isAuthenticated && token) {
+      loadBackendMasterData();
+    }
+  }, [isAuthenticated, loadBackendMasterData]);
+
   const contextValue = {
     isAuthenticated, setIsAuthenticated, currentUser, setCurrentUser,
     activeTab, setActiveTab, expandedMenus, setExpandedMenus, isMobileMenuOpen, setIsMobileMenuOpen,
@@ -90,7 +221,7 @@ export const AppProvider = ({ children }) => {
     products, setProducts, customers, setCustomers, suppliers, setSuppliers, warehouses, setWarehouses,
     inventory, setInventory, stockIn, setStockIn, stockOut, setStockOut, inventoryChecks, setInventoryChecks,
     salesOrders, setSalesOrders, dealerRecords, setDealerRecords, receivables, setReceivables, payables, setPayables,
-    auditLogs, setAuditLogs, addLog
+    auditLogs, setAuditLogs, addLog, loadBackendMasterData
   };
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;

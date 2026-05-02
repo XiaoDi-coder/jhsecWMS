@@ -3,6 +3,7 @@ import { Plus, Eye, Check, Trash2, FileText, Send, Calculator } from 'lucide-rea
 import { AppContext } from '../context/AppContext';
 import { PageHeader, Badge, Pagination, EmptyState, SearchBar } from '../components/common';
 import { getLocalDate, createId, createOrderNo } from '../utils';
+import request from '../utils/request';
 
 export const StockOutPage = () => {
   const { stockOut, setStockOut, showConfirm, showMessage, setActiveTab, setCurrentDetail, setInventory, addLog, systemDict } = useContext(AppContext);
@@ -73,13 +74,13 @@ export const StockOutPage = () => {
 };
 
 export const StockOutCreatePage = () => {
-  const { setStockOut, setActiveTab, showMessage, customers, products, inventory, addLog, systemDict } = useContext(AppContext);
+  const { setActiveTab, showMessage, customers, products, inventory, addLog, systemDict, warehouses, loadBackendMasterData } = useContext(AppContext);
   const [items, setItems] = useState(() => [{ id: createId(), product: products[0]?.name || '', qty: 1, price: products[0]?.price || 0 }]);
   const [customer, setCustomer] = useState(customers[0]?.name || ''); const [warehouse, setWarehouse] = useState(systemDict.warehouses[0]);
   const [type, setType] = useState('销售出库'); const [remark, setRemark] = useState(''); const [date, setDate] = useState(getLocalDate());
   const total = items.reduce((sum, item) => sum + (Number(item.qty) * Number(item.price)), 0);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if(!items.length) return showMessage('错误', '请添加商品！');
     if(!customer) return showMessage('错误', '请选择客户！');
     if(items.some(i => Number(i.qty) <= 0)) return showMessage('数据防爆拦截', '出库商品数量必须大于 0 ！');
@@ -96,9 +97,35 @@ export const StockOutCreatePage = () => {
     }
 
     const orderNo = createOrderNo('CK');
-    setStockOut(prev => [{ id: createId(), orderNo, type, warehouse, customer, date, amount: total.toFixed(2), status: '待发货', operator: 'admin', items, remark }, ...prev]);
-    addLog('出库管理', '新建单据', `已创建草稿出库单: ${orderNo}`);
-    setActiveTab('stock-out');
+    const customerRecord = customers.find((c) => c.name === customer);
+    const warehouseRecord = warehouses.find((w) => w.name === warehouse);
+    if (!customerRecord?.id || !warehouseRecord?.id) {
+      return showMessage('错误', '客户或仓库未同步到后端，请刷新后重试');
+    }
+    const hasUnknownProduct = items.some((it) => !products.find((p) => p.name === it.product)?.id);
+    if (hasUnknownProduct) return showMessage('错误', '存在未同步商品，请刷新后重试');
+
+    try {
+      await request.post('/stock-out', {
+        stock_out_no: orderNo,
+        warehouse_id: warehouseRecord.id,
+        target_type: type,
+        customer_id: customerRecord.id,
+        items: items.map((it) => {
+          const prod = products.find((p) => p.name === it.product);
+          return {
+            product_id: prod?.id,
+            quantity: Number(it.qty),
+            unit_price: Number(it.price),
+          };
+        }),
+      });
+      await loadBackendMasterData();
+      addLog('出库管理', '新建单据', `已创建出库单: ${orderNo}`);
+      setActiveTab('stock-out');
+    } catch (error) {
+      showMessage('创建失败', error?.response?.data?.message || '后端请求失败');
+    }
   };
 
   const inputClass = "w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all hover:border-slate-300";

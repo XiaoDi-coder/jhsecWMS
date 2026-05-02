@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from 'react';
+import { useContext, useEffect } from 'react';
 import { User, LogOut, ChevronDown, ChevronRight, Menu } from 'lucide-react';
 import { AppContext } from '../../context/AppContext';
 import { menuConfig } from '../../data/mock';
@@ -6,7 +6,7 @@ import myLogo from '../../assets/logo.png'; // 确保路径正确
 
 const Layout = ({ children }) => {
   const { 
-    isAuthenticated, setIsAuthenticated, currentUser, setCurrentUser,
+    setIsAuthenticated, currentUser, setCurrentUser,
     activeTab, setActiveTab, expandedMenus, setExpandedMenus, 
     isMobileMenuOpen, setIsMobileMenuOpen, roles, addLog 
   } = useContext(AppContext);
@@ -92,7 +92,7 @@ const Layout = ({ children }) => {
               <div className="flex-col hidden sm:flex"><span className="text-sm font-bold text-slate-800 leading-tight">{currentUser?.realName}</span><span className="text-[11px] text-slate-500">{currentUser?.role}</span></div>
             </div>
             <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>
-            <button onClick={()=>{ setIsAuthenticated(false); setCurrentUser(null); setActiveTab('dashboard'); addLog('安全网关', '用户登出', '成功注销系统连接'); }} className="p-2 text-slate-400 hover:text-rose-500 transition-colors bg-white border border-slate-200 rounded-xl hover:bg-rose-50 hover:border-rose-200"><LogOut size={18} /></button>
+            <button onClick={()=>{ localStorage.removeItem('wms_token'); localStorage.removeItem('wms_user'); setIsAuthenticated(false); setCurrentUser(null); setActiveTab('dashboard'); addLog('安全网关', '用户登出', '成功注销系统连接'); }} className="p-2 text-slate-400 hover:text-rose-500 transition-colors bg-white border border-slate-200 rounded-xl hover:bg-rose-50 hover:border-rose-200"><LogOut size={18} /></button>
           </div>
         </header>
         

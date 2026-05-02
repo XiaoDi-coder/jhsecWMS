@@ -1,0 +1,168 @@
+-- 创建数据库并指定字符集为 utf8mb4，完美支持中文和特殊符号
+CREATE DATABASE IF NOT EXISTS `jhsec_wms` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `jhsec_wms`;
+
+-- ==========================================
+-- 1. 系统管理模块 (对应 SystemManagePages.jsx)
+-- ==========================================
+
+-- 角色表
+CREATE TABLE `sys_roles` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `role_name` VARCHAR(50) NOT NULL COMMENT '角色名称',
+  `permissions` JSON COMMENT '角色权限标识符集合',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) COMMENT='系统角色表';
+
+-- 用户表
+CREATE TABLE `sys_users` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `username` VARCHAR(50) NOT NULL UNIQUE COMMENT '登录账号',
+  `password_hash` VARCHAR(255) NOT NULL COMMENT '加密后的密码',
+  `real_name` VARCHAR(50) NOT NULL COMMENT '真实姓名',
+  `role_id` INT COMMENT '关联的角色ID',
+  `status` TINYINT DEFAULT 1 COMMENT '状态：1正常，0禁用',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `is_deleted` TINYINT DEFAULT 0 COMMENT '软删除标识'
+) COMMENT='系统用户表';
+
+-- ==========================================
+-- 2. 基础数据模块 (对应 BasicDataPages.jsx)
+-- ==========================================
+
+-- 仓库表
+CREATE TABLE `base_warehouses` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `warehouse_code` VARCHAR(50) NOT NULL UNIQUE COMMENT '仓库编码',
+  `warehouse_name` VARCHAR(100) NOT NULL COMMENT '仓库名称',
+  `location` VARCHAR(255) COMMENT '仓库具体位置',
+  `status` TINYINT DEFAULT 1 COMMENT '状态：1启用，0停用',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) COMMENT='仓库信息表';
+
+-- 商品/物资表
+CREATE TABLE `base_products` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `product_code` VARCHAR(50) NOT NULL UNIQUE COMMENT '商品/物资编码',
+  `product_name` VARCHAR(100) NOT NULL COMMENT '商品名称',
+  `category` VARCHAR(50) COMMENT '商品分类',
+  `unit` VARCHAR(20) COMMENT '计量单位',
+  `standard_price` DECIMAL(12, 2) DEFAULT 0.00 COMMENT '标准参考价',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `is_deleted` TINYINT DEFAULT 0 COMMENT '软删除标识'
+) COMMENT='商品/物资信息表';
+
+-- 客户/供应商/经销商表 (可以通过 type 字段区分，也可以拆分，这里采用集成表方便统一管理)
+CREATE TABLE `base_partners` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `partner_code` VARCHAR(50) NOT NULL UNIQUE COMMENT '合作方编码',
+  `partner_name` VARCHAR(100) NOT NULL COMMENT '合作方名称',
+  `partner_type` VARCHAR(20) NOT NULL COMMENT '类型：CUSTOMER(客户), SUPPLIER(供应商), DEALER(经销商)',
+  `contact_person` VARCHAR(50) COMMENT '联系人',
+  `contact_phone` VARCHAR(50) COMMENT '联系电话',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `is_deleted` TINYINT DEFAULT 0
+) COMMENT='合作伙伴(客户/供应商/经销商)表';
+
+-- ==========================================
+-- 3. 库存模块 (对应 InventoryQueryPage.jsx)
+-- ==========================================
+
+-- 实时库存表 (核心表)
+CREATE TABLE `inv_stock` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `warehouse_id` INT NOT NULL COMMENT '关联仓库ID',
+  `product_id` INT NOT NULL COMMENT '关联商品ID',
+  `quantity` DECIMAL(10, 2) DEFAULT 0.00 COMMENT '当前库存数量',
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_warehouse_product` (`warehouse_id`, `product_id`)
+) COMMENT='实时库存表';
+
+-- ==========================================
+-- 4. 业务单据模块 (入库、出库、销售)
+-- ==========================================
+
+-- 销售订单主表 (对应 SalesOrdersPage.jsx)
+CREATE TABLE `biz_sales_orders` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `order_no` VARCHAR(50) NOT NULL UNIQUE COMMENT '销售单号',
+  `customer_id` INT NOT NULL COMMENT '关联客户ID',
+  `total_amount` DECIMAL(12, 2) DEFAULT 0.00 COMMENT '订单总金额',
+  `status` VARCHAR(20) DEFAULT 'PENDING' COMMENT '状态: PENDING, APPROVED, SHIPPED, COMPLETED',
+  `creator_id` INT COMMENT '制单人ID',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) COMMENT='销售订单主表';
+
+-- 入库单主表 (对应 StockInPage.jsx)
+CREATE TABLE `biz_stock_in` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `stock_in_no` VARCHAR(50) NOT NULL UNIQUE COMMENT '入库单号',
+  `warehouse_id` INT NOT NULL COMMENT '目标仓库ID',
+  `source_type` VARCHAR(30) COMMENT '入库来源类型：采购入库、退货入库等',
+  `supplier_id` INT COMMENT '关联供应商ID(如适用)',
+  `status` VARCHAR(20) DEFAULT 'DRAFT' COMMENT '状态：DRAFT(草稿), CONFIRMED(已入库)',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) COMMENT='入库单主表';
+
+-- 单据明细通用表 (为了简化示例，这里用一张表整合明细记录。实战中也可拆分为多张明细表)
+CREATE TABLE `biz_order_items` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `order_type` VARCHAR(20) NOT NULL COMMENT '单据类型：SALES, STOCK_IN, STOCK_OUT',
+  `order_id` INT NOT NULL COMMENT '关联的主表ID',
+  `product_id` INT NOT NULL COMMENT '关联商品ID',
+  `quantity` DECIMAL(10, 2) NOT NULL COMMENT '操作数量',
+  `unit_price` DECIMAL(12, 2) DEFAULT 0.00 COMMENT '单价',
+  `total_price` DECIMAL(12, 2) DEFAULT 0.00 COMMENT '总价 (quantity * unit_price)'
+) COMMENT='单据商品明细表';
+
+-- ==========================================
+-- 5. 财务模块 (对应 ReceivablesPage.jsx / PayablesPage.jsx)
+-- ==========================================
+
+-- 财务流水表 (应收/应付) - 支持分次收付
+CREATE TABLE `fin_transactions` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `transaction_no` VARCHAR(50) NOT NULL UNIQUE COMMENT '财务单号',
+  `trans_type` VARCHAR(20) NOT NULL COMMENT '类型：RECEIVABLE(应收), PAYABLE(应付)',
+  `partner_id` INT NOT NULL COMMENT '关联客户或供应商ID',
+  `amount` DECIMAL(12, 2) NOT NULL COMMENT '总金额',
+  `paid_amount` DECIMAL(12, 2) DEFAULT 0.00 COMMENT '已支付金额',
+  `remaining_amount` DECIMAL(12, 2) GENERATED ALWAYS AS (amount - paid_amount) STORED COMMENT '剩余未支付金额',
+  `status` VARCHAR(20) DEFAULT 'UNPAID' COMMENT '状态：UNPAID(未结清), PARTIAL(部分支付), PAID(已结清)',
+  `related_order_no` VARCHAR(50) COMMENT '关联的业务单号(如销售单号)',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) COMMENT='财务应收应付表 - 支持分次收付';
+
+-- 财务支付明细表 (记录每次的支付记录)
+CREATE TABLE `fin_payment_records` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `transaction_id` INT NOT NULL COMMENT '关联的财务流水ID',
+  `payment_no` VARCHAR(50) NOT NULL COMMENT '支付单号',
+  `payment_amount` DECIMAL(12, 2) NOT NULL COMMENT '本次支付金额',
+  `payment_method` VARCHAR(50) COMMENT '支付方式：CASH, BANK_TRANSFER, ALIPAY, WECHAT等',
+  `payment_date` DATE NOT NULL COMMENT '支付日期',
+  `payment_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '支付时间',
+  `remark` TEXT COMMENT '备注说明',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_payment_no` (`payment_no`)
+) COMMENT='财务支付明细表 - 记录每次的分次支付';
+
+-- 补全：出库单主表 (对应 StockOutPage.jsx)
+CREATE TABLE `biz_stock_out` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `stock_out_no` VARCHAR(50) NOT NULL UNIQUE COMMENT '出库单号',
+  `warehouse_id` INT NOT NULL COMMENT '源仓库ID',
+  `target_type` VARCHAR(30) COMMENT '出库目标类型：销售出库、领用出库等',
+  `customer_id` INT COMMENT '关联客户ID(如适用)',
+  `status` VARCHAR(20) DEFAULT 'DRAFT' COMMENT '状态：DRAFT(草稿), CONFIRMED(已出库)',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) COMMENT='出库单主表';
